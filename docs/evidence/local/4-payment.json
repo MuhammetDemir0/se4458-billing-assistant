@@ -1,0 +1,247 @@
+{
+  "scenario": "4-payment",
+  "question": "Pay my October 2026 bill",
+  "httpStatus": 200,
+  "conversationId": "7cec076b-40dd-4592-a429-00e10056da02",
+  "answer": "I have prepared a payment for your October 2026 bill:\n\n- **Subscriber:** 5551000001\n- **Billing Period:** October 2026\n- **Amount:** $80.00\n- **Remaining Balance:** $80.00\n\nPlease press **Confirm** or **Cancel** to proceed.",
+  "pendingPayment": {
+    "paymentIntentId": "8c7aae42-d9b4-402b-abf8-b08a9401e933",
+    "subscriberNo": "5551000001",
+    "period": "2026-10",
+    "amount": 80.0,
+    "currentRemainingBalance": 80.0,
+    "billTotal": 80.0,
+    "currency": "USD",
+    "expiresAt": "2026-11-20T21:12:27.331532+00:00",
+    "status": "PENDING"
+  },
+  "payment": null,
+  "model": "gemini-3.5-flash-lite",
+  "usage": {
+    "promptTokens": 4353,
+    "outputTokens": 125,
+    "thinkingTokens": 0
+  },
+  "trace": [
+    {
+      "step": 1,
+      "kind": "llm",
+      "name": "gemini-3.5-flash-lite",
+      "input": {
+        "tools": [
+          "search_billing_documentation",
+          "get_bill",
+          "get_bill_details",
+          "prepare_bill_payment"
+        ]
+      },
+      "output": {
+        "toolCalls": [
+          {
+            "name": "get_bill",
+            "args": {
+              "month": 10,
+              "year": 2026
+            }
+          }
+        ],
+        "text": "",
+        "usage": {
+          "promptTokens": 1297,
+          "outputTokens": 22,
+          "thinkingTokens": 0
+        }
+      },
+      "status": "ok",
+      "latency_ms": 536.7,
+      "http": []
+    },
+    {
+      "step": 2,
+      "kind": "rest",
+      "name": "get_bill",
+      "input": {
+        "month": 10,
+        "year": 2026
+      },
+      "output": {
+        "subscriberNo": "5551000001",
+        "year": 2026,
+        "month": 10,
+        "currency": "USD",
+        "billTotal": 80.0,
+        "paidAmount": 0.0,
+        "remainingBalance": 80.0,
+        "status": "UNPAID",
+        "calculatedAt": "2026-11-20T21:07:10.575894Z"
+      },
+      "status": "ok",
+      "latency_ms": 6.9,
+      "http": [
+        {
+          "method": "GET",
+          "path": "/api/v1/subscribers/5551000001/bills/2026/10",
+          "status": 200,
+          "latencyMs": 6.9
+        }
+      ]
+    },
+    {
+      "step": 3,
+      "kind": "llm",
+      "name": "gemini-3.5-flash-lite",
+      "input": {
+        "tools": [
+          "search_billing_documentation",
+          "get_bill",
+          "get_bill_details",
+          "prepare_bill_payment"
+        ]
+      },
+      "output": {
+        "toolCalls": [
+          {
+            "name": "prepare_bill_payment",
+            "args": {
+              "month": 10,
+              "year": 2026
+            }
+          }
+        ],
+        "text": "",
+        "usage": {
+          "promptTokens": 1419,
+          "outputTokens": 24,
+          "thinkingTokens": 0
+        }
+      },
+      "status": "ok",
+      "latency_ms": 855.1,
+      "http": []
+    },
+    {
+      "step": 4,
+      "kind": "rest",
+      "name": "prepare_bill_payment",
+      "input": {
+        "month": 10,
+        "year": 2026
+      },
+      "output": {
+        "paymentIntentId": "8c7aae42-d9b4-402b-abf8-b08a9401e933",
+        "subscriberNo": "5551000001",
+        "period": "2026-10",
+        "amount": 80.0,
+        "currentRemainingBalance": 80.0,
+        "billTotal": 80.0,
+        "currency": "USD",
+        "expiresAt": "2026-11-20T21:12:27.331532+00:00",
+        "status": "AWAITING_USER_CONFIRMATION",
+        "instructions": "No payment has been made. Show the subscriber, period, amount and remaining balance, then ask the user to press Confirm (or Cancel). Never say the payment succeeded."
+      },
+      "status": "ok",
+      "latency_ms": 14.5,
+      "http": [
+        {
+          "method": "GET",
+          "path": "/api/v1/subscribers/5551000001/bills/2026/10",
+          "status": 200,
+          "latencyMs": 14.3
+        }
+      ]
+    },
+    {
+      "step": 5,
+      "kind": "llm",
+      "name": "gemini-3.5-flash-lite",
+      "input": {
+        "tools": [
+          "search_billing_documentation",
+          "get_bill",
+          "get_bill_details",
+          "prepare_bill_payment"
+        ]
+      },
+      "output": {
+        "toolCalls": [],
+        "text": "I have prepared a payment for your October 2026 bill:\n\n- **Subscriber:** 5551000001\n- **Billing Period:** October 2026\n- **Amount:** $80.00\n- **Remaining Balance:** $80.00\n\nPlease press **Confirm** or **Cancel** to proceed.",
+        "usage": {
+          "promptTokens": 1637,
+          "outputTokens": 79,
+          "thinkingTokens": 0
+        }
+      },
+      "status": "ok",
+      "latency_ms": 822.0,
+      "http": []
+    }
+  ],
+  "confirmation": {
+    "httpStatus": 200,
+    "conversationId": "7cec076b-40dd-4592-a429-00e10056da02",
+    "answer": "Payment recorded: $80.00 for the 2026-10 bill of subscriber 5551000001 (transaction 8c7aae42-d9b4-402b-abf8-b08a9401e933). Remaining balance: $0.00, bill status: PAID.",
+    "pendingPayment": null,
+    "payment": {
+      "paymentStatus": "SUCCESS",
+      "transactionId": "8c7aae42-d9b4-402b-abf8-b08a9401e933",
+      "paidAmount": 80.0,
+      "totalPaid": 80.0,
+      "remainingBalance": 0.0,
+      "billStatus": "PAID"
+    },
+    "model": "gemini-3.5-flash-lite",
+    "usage": {},
+    "trace": [
+      {
+        "step": 1,
+        "kind": "confirmation",
+        "name": "user_confirmed_payment",
+        "input": {
+          "paymentIntentId": "8c7aae42-d9b4-402b-abf8-b08a9401e933"
+        },
+        "output": {
+          "paymentIntentId": "8c7aae42-d9b4-402b-abf8-b08a9401e933",
+          "subscriberNo": "5551000001",
+          "period": "2026-10",
+          "amount": 80.0,
+          "currentRemainingBalance": 80.0,
+          "billTotal": 80.0,
+          "currency": "USD",
+          "expiresAt": "2026-11-20T21:12:27.331532+00:00",
+          "status": "CONFIRMED"
+        },
+        "status": "ok",
+        "latency_ms": 0.0,
+        "http": []
+      },
+      {
+        "step": 2,
+        "kind": "rest",
+        "name": "pay_bill",
+        "input": {
+          "period": "2026-10",
+          "amount": 80.0,
+          "transactionId": "8c7aae42-d9b4-402b-abf8-b08a9401e933"
+        },
+        "output": {
+          "paymentStatus": "SUCCESS",
+          "transactionId": "8c7aae42-d9b4-402b-abf8-b08a9401e933",
+          "paidAmount": 80.0,
+          "totalPaid": 80.0,
+          "remainingBalance": 0.0,
+          "billStatus": "PAID"
+        },
+        "status": "ok",
+        "latency_ms": 28.2,
+        "http": [
+          {
+            "method": "POST",
+            "path": "/api/v1/subscribers/5551000001/bills/2026/10/payments",
+            "status": 201,
+            "latencyMs": 28.2
+          }
+        ]
+      }
+    ]
+  }
+}

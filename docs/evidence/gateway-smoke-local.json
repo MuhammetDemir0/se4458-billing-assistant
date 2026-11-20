@@ -1,0 +1,224 @@
+{
+  "gateway": "http://127.0.0.1:8080",
+  "results": [
+    {
+      "check": "health (public)",
+      "request": "GET http://127.0.0.1:8080/api/v1/health",
+      "expected": 200,
+      "status": 200,
+      "ok": true,
+      "requestId": "800b181f-9dd0-438f-a9a9-d58aa4dc893d",
+      "body": {
+        "status": "ok",
+        "database": "up",
+        "version": "v1"
+      }
+    },
+    {
+      "check": "OpenAPI document (public, versioned)",
+      "request": "GET http://127.0.0.1:8080/api/v1/openapi.json",
+      "expected": 200,
+      "status": 200,
+      "ok": true,
+      "requestId": "d804dc68-800d-44fc-be76-b9acb9db4319",
+      "body": "{\"openapi\": \"3.1.0\", \"info\": {\"title\": \"Mobile Provider Billing API\", \"description\": \"\\nBilling REST API of the Mobile Provider Billing Assistant (SE 4458 Midterm, Group 2).\\n\\n* All public routes are served through the API Gateway under `/api/v1`.\\n* Protected operations need a bearer **access token** (Amazon Cognito in the cloud,\\n  a development token locally). Use the **Authorize** button to paste one.\\n* Errors use RFC 7807 `application/problem+json` with a machine-readable `code`.\\n\", \"version\": \"1.0.0\"}, \"paths\": {\"/api/v1/subscribers/{subscriber_no}/usage\": {\"post\": {\"tags\": [\"Usage\"], \"summary\": \"Add Usage\", \"description\": \"Records one usage event: PHONE adds 10 minutes, INTERNET adds 1 MB. Requires billing-admin.\", \"operationId\": \"add_usage_api_v1_subscribers__subscriber_no__usage_post\", \"security\": [{\"HTTPBearer\": []}], \"parameters\": [{\"name\": \"subscriber_no\", \"in\": \"path\", \"required\": true, \"schema\": {\"type\": \"string\", \"pattern\": \"^\\\\d{10}$\", \"description\": \"10-digit subscriber number\", \"examples\": [\"5551000001\"], \"title\": \"Subscriber No\"}, \"description\": \"10-digit subscriber number\"}], \"requestBody\": {\"required\": true, \"content\": {\"application/json\": {\"schema\": {\"$ref\": \"#/components/schemas/AddUsageRequest\"}}}}, \"responses\": {\"201\": {\"description\": \"Successful Response\", \"content\": {\"application/json\": {\"schema\": {\"$ref\": \"#/components/schemas/AddUsageResponse\"}}}}, \"400\": {\"content\": {\"application/json\": {\"schema\": {\"$ref\": \"#/components/schemas/ProblemDetails\"...(truncated)"
+    },
+    {
+      "check": "Query Bill (public route)",
+      "request": "GET http://127.0.0.1:8080/api/v1/subscribers/5551000001/bills/2026/10",
+      "expected": 200,
+      "status": 200,
+      "ok": true,
+      "requestId": "a160fdb3-ae9d-4458-9017-438dd6ef1981",
+      "body": {
+        "subscriberNo": "5551000001",
+        "year": 2026,
+        "month": 10,
+        "currency": "USD",
+        "billTotal": 80.0,
+        "paidAmount": 0.0,
+        "remainingBalance": 80.0,
+        "status": "UNPAID",
+        "calculatedAt": "2026-11-20T21:07:10.575894Z"
+      }
+    },
+    {
+      "check": "Query Bill Detailed without token (protected route)",
+      "request": "GET http://127.0.0.1:8080/api/v1/subscribers/5551000001/bills/2026/10/details",
+      "expected": 401,
+      "status": 401,
+      "ok": true,
+      "requestId": "74e8485c-a169-4ded-ba1a-728569456167",
+      "body": {
+        "message": "Unauthorized"
+      }
+    },
+    {
+      "check": "Pay Bill without token (protected route)",
+      "request": "POST http://127.0.0.1:8080/api/v1/subscribers/5551000001/bills/2026/10/payments",
+      "expected": 401,
+      "status": 401,
+      "ok": true,
+      "requestId": "2a588c0b-a790-4f5c-aaba-f7c8bd6e3f2b",
+      "body": {
+        "message": "Unauthorized"
+      }
+    },
+    {
+      "check": "agent sign-in",
+      "request": "POST http://127.0.0.1:8080/agent/v1/auth/login",
+      "expected": 200,
+      "status": 200,
+      "ok": true,
+      "requestId": "d34071a1-b7da-4546-89cc-fd4338821b53",
+      "body": {
+        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb2NhbC01NTUxMDAwMDAxIiwidXNlcm5hbWUiOiI1NTUxMDAwMDAxIiwiY29nbml0bzpncm91cHMiOlsic3Vic2NyaWJlciJdLCJ0b2tlbl91c2UiOiJhY2Nlc3MiLCJjbGllbnRfaWQiOiJsb2NhbC1hZ2VudCIsImlzcyI6ImxvY2FsLWRldi1pc3N1ZXIiLCJpYXQiOjE3OTUyMDg4NDAsImV4cCI6MTc5NTIxMjQ0MH0.3o7bHFhX5qSt0RwauwWhRvaZpVbijIDrGGjNyCKPK8k",
+        "expiresIn": 3600,
+        "username": "5551000001"
+      }
+    },
+    {
+      "check": "Query Bill Detailed with own token",
+      "request": "GET http://127.0.0.1:8080/api/v1/subscribers/5551000001/bills/2026/10/details?page=1&pageSize=3",
+      "expected": 200,
+      "status": 200,
+      "ok": true,
+      "requestId": "af809a01-e68f-4291-a8ef-c9ccfabaa53d",
+      "body": {
+        "subscriberNo": "5551000001",
+        "year": 2026,
+        "month": 10,
+        "currency": "USD",
+        "billTotal": 80.0,
+        "paidAmount": 0.0,
+        "remainingBalance": 80.0,
+        "status": "UNPAID",
+        "calculatedAt": "2026-11-20T21:07:10.575894Z",
+        "charges": {
+          "phone": {
+            "minutesUsed": 1350,
+            "includedMinutes": 1000,
+            "blockSizeMinutes": 1000,
+            "blockPrice": 10.0,
+            "extraBlocks": 1,
+            "amount": 10.0
+          },
+          "internet": {
+            "mbUsed": 35000,
+            "gbUsed": 35.0,
+            "includedMb": 20000,
+            "basePrice": 50.0,
+            "blockSizeMb": 10000,
+            "blockPrice": 10.0,
+            "extraBlocks": 2,
+            "amount": 70.0
+          },
+          "total": 80.0
+        },
+        "usageRecords": {
+          "items": [
+            {
+              "usageId": 18081,
+              "usageType": "PHONE",
+              "quantity": 10,
+              "unit": "MINUTE",
+              "recordedAt": "2026-10-01T00:00:00Z"
+            },
+            {
+              "usageId": 18216,
+              "usageType": "INTERNET",
+              "quantity": 1,
+              "unit": "MB",
+              "recordedAt": "2026-10-01T00:00:00Z"
+            },
+            {
+              "usageId": 18217,
+              "usageType": "INTERNET",
+              "quantity": 1,
+              "unit": "MB",
+              "recordedAt": "2026-10-01T00:01:09Z"
+            }
+          ],
+          "page": 1,
+          "pageSize": 3,
+          "totalItems": 35135,
+          "totalPages": 11712
+        }
+      }
+    },
+    {
+      "check": "another subscriber's details with my token",
+      "request": "GET http://127.0.0.1:8080/api/v1/subscribers/5551000002/bills/2026/10/details",
+      "expected": 403,
+      "status": 403,
+      "ok": true,
+      "requestId": "aaa2d068-e154-416f-b3a8-6b7dfb792de1",
+      "body": {
+        "type": "https://errors.billing.example/subscriber-forbidden",
+        "title": "Access denied",
+        "status": 403,
+        "detail": "You can only access your own subscriber account.",
+        "code": "SUBSCRIBER_FORBIDDEN",
+        "instance": "/api/v1/subscribers/5551000002/bills/2026/10/details",
+        "requestId": "aaa2d068-e154-416f-b3a8-6b7dfb792de1"
+      }
+    },
+    {
+      "check": "Add Usage with a subscriber token (admin only)",
+      "request": "POST http://127.0.0.1:8080/api/v1/subscribers/5551000001/usage",
+      "expected": 403,
+      "status": 403,
+      "ok": true,
+      "requestId": "ccb36b28-2df3-4e69-84d7-bb8a727e642c",
+      "body": {
+        "type": "https://errors.billing.example/admin-required",
+        "title": "Access denied",
+        "status": 403,
+        "detail": "This operation requires the billing-admin role.",
+        "code": "ADMIN_REQUIRED",
+        "instance": "/api/v1/subscribers/5551000001/usage",
+        "requestId": "ccb36b28-2df3-4e69-84d7-bb8a727e642c"
+      }
+    },
+    {
+      "check": "invalid month -> validation error",
+      "request": "GET http://127.0.0.1:8080/api/v1/subscribers/5551000001/bills/2026/13",
+      "expected": 400,
+      "status": 400,
+      "ok": true,
+      "requestId": "dbdfeb09-09af-4115-b949-a495de43aaf7",
+      "body": {
+        "type": "https://errors.billing.example/validation-error",
+        "title": "Invalid request",
+        "status": 400,
+        "detail": "One or more fields are invalid.",
+        "code": "VALIDATION_ERROR",
+        "instance": "/api/v1/subscribers/5551000001/bills/2026/13",
+        "requestId": "dbdfeb09-09af-4115-b949-a495de43aaf7",
+        "errors": [
+          {
+            "field": "path.month",
+            "message": "Input should be less than or equal to 12"
+          }
+        ]
+      }
+    },
+    {
+      "check": "agent health (MCP tools discovered)",
+      "request": "GET http://127.0.0.1:8080/agent/v1/health",
+      "expected": 200,
+      "status": 200,
+      "ok": true,
+      "requestId": "137f69c2-9df3-41ed-b701-5cfb945ab186",
+      "body": {
+        "status": "ok",
+        "model": "gemini-3.6-flash",
+        "fallbackModel": "gemini-3.5-flash-lite",
+        "mcpToolsLoaded": [
+          "search_billing_documentation"
+        ],
+        "gateway": "http://kong:8000"
+      }
+    }
+  ]
+}

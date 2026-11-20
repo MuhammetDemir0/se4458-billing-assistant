@@ -1,0 +1,872 @@
+openapi: 3.1.0
+info:
+  title: Mobile Provider Billing API
+  description: "\nBilling REST API of the Mobile Provider Billing Assistant (SE 4458\
+    \ Midterm, Group 2).\n\n* All public routes are served through the API Gateway\
+    \ under `/api/v1`.\n* Protected operations need a bearer **access token** (Amazon\
+    \ Cognito in the cloud,\n  a development token locally). Use the **Authorize**\
+    \ button to paste one.\n* Errors use RFC 7807 `application/problem+json` with\
+    \ a machine-readable `code`.\n"
+  version: 1.0.0
+paths:
+  /api/v1/subscribers/{subscriber_no}/usage:
+    post:
+      tags:
+      - Usage
+      summary: Add Usage
+      description: 'Records one usage event: PHONE adds 10 minutes, INTERNET adds
+        1 MB. Requires billing-admin.'
+      operationId: add_usage_api_v1_subscribers__subscriber_no__usage_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: subscriber_no
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^\d{10}$
+          description: 10-digit subscriber number
+          examples:
+          - '5551000001'
+          title: Subscriber No
+        description: 10-digit subscriber number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddUsageRequest'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddUsageResponse'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Not Found
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/subscribers/{subscriber_no}/bills/{year}/{month}/calculate:
+    post:
+      tags:
+      - Bills
+      summary: Calculate Bill
+      description: 'Calculates the bill from recorded usage and stores it. Safe to
+        repeat: recalculation keeps payments already made. Requires billing-admin.'
+      operationId: calculate_bill_api_v1_subscribers__subscriber_no__bills__year___month__calculate_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: subscriber_no
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^\d{10}$
+          description: 10-digit subscriber number
+          examples:
+          - '5551000001'
+          title: Subscriber No
+        description: 10-digit subscriber number
+      - name: year
+        in: path
+        required: true
+        schema:
+          type: integer
+          maximum: 2100
+          minimum: 2000
+          examples:
+          - 2026
+          title: Year
+      - name: month
+        in: path
+        required: true
+        schema:
+          type: integer
+          maximum: 12
+          minimum: 1
+          examples:
+          - 10
+          title: Month
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalculateBillResponse'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/subscribers/{subscriber_no}/bills/{year}/{month}:
+    get:
+      tags:
+      - Bills
+      summary: Query Bill
+      description: Bill total, paid amount, remaining balance and status. Public by
+        specification (no authentication).
+      operationId: query_bill_api_v1_subscribers__subscriber_no__bills__year___month__get
+      parameters:
+      - name: subscriber_no
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^\d{10}$
+          description: 10-digit subscriber number
+          examples:
+          - '5551000001'
+          title: Subscriber No
+        description: 10-digit subscriber number
+      - name: year
+        in: path
+        required: true
+        schema:
+          type: integer
+          maximum: 2100
+          minimum: 2000
+          examples:
+          - 2026
+          title: Year
+      - name: month
+        in: path
+        required: true
+        schema:
+          type: integer
+          maximum: 12
+          minimum: 1
+          examples:
+          - 10
+          title: Month
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillSummaryResponse'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Not Found
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/subscribers/{subscriber_no}/bills/{year}/{month}/details:
+    get:
+      tags:
+      - Bills
+      summary: Query Bill Detailed
+      description: Summary plus phone minutes, internet MB/GB, charge breakdown and
+        a paged list of usage records. Only the account owner or billing-admin.
+      operationId: query_bill_detailed_api_v1_subscribers__subscriber_no__bills__year___month__details_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: subscriber_no
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^\d{10}$
+          description: 10-digit subscriber number
+          examples:
+          - '5551000001'
+          title: Subscriber No
+        description: 10-digit subscriber number
+      - name: year
+        in: path
+        required: true
+        schema:
+          type: integer
+          maximum: 2100
+          minimum: 2000
+          examples:
+          - 2026
+          title: Year
+      - name: month
+        in: path
+        required: true
+        schema:
+          type: integer
+          maximum: 12
+          minimum: 1
+          examples:
+          - 10
+          title: Month
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+          title: Page
+      - name: pageSize
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 20
+          title: Pagesize
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillDetailsResponse'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Not Found
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/subscribers/{subscriber_no}/bills/{year}/{month}/payments:
+    post:
+      tags:
+      - Payments
+      summary: Pay Bill
+      description: Records a simulated full or partial payment (no card processing).
+        Rejects duplicate transaction ids (409) and amounts above the remaining balance
+        (422). Only the account owner.
+      operationId: pay_bill_api_v1_subscribers__subscriber_no__bills__year___month__payments_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: subscriber_no
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^\d{10}$
+          description: 10-digit subscriber number
+          examples:
+          - '5551000001'
+          title: Subscriber No
+        description: 10-digit subscriber number
+      - name: year
+        in: path
+        required: true
+        schema:
+          type: integer
+          maximum: 2100
+          minimum: 2000
+          examples:
+          - 2026
+          title: Year
+      - name: month
+        in: path
+        required: true
+        schema:
+          type: integer
+          maximum: 12
+          minimum: 1
+          examples:
+          - 10
+          title: Month
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayBillRequest'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayBillResponse'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Conflict
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Unprocessable Content
+  /api/v1/health:
+    get:
+      tags:
+      - Health
+      summary: Health check (includes database connectivity)
+      operationId: health_api_v1_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+components:
+  schemas:
+    AddUsageRequest:
+      properties:
+        month:
+          type: integer
+          maximum: 12.0
+          minimum: 1.0
+          title: Month
+          examples:
+          - 10
+        year:
+          type: integer
+          maximum: 2100.0
+          minimum: 2000.0
+          title: Year
+          examples:
+          - 2026
+        usageType:
+          $ref: '#/components/schemas/UsageType'
+          description: PHONE adds 10 minutes, INTERNET adds 1 MB.
+          examples:
+          - PHONE
+      type: object
+      required:
+      - month
+      - year
+      - usageType
+      title: AddUsageRequest
+    AddUsageResponse:
+      properties:
+        transactionStatus:
+          type: string
+          const: SUCCESS
+          title: Transactionstatus
+          default: SUCCESS
+        subscriberNo:
+          type: string
+          title: Subscriberno
+        year:
+          type: integer
+          title: Year
+        month:
+          type: integer
+          title: Month
+        record:
+          $ref: '#/components/schemas/UsageRecordDto'
+      type: object
+      required:
+      - subscriberNo
+      - year
+      - month
+      - record
+      title: AddUsageResponse
+    BillDetailsResponse:
+      properties:
+        subscriberNo:
+          type: string
+          title: Subscriberno
+        year:
+          type: integer
+          title: Year
+        month:
+          type: integer
+          title: Month
+        currency:
+          type: string
+          const: USD
+          title: Currency
+          default: USD
+        billTotal:
+          type: number
+          title: Billtotal
+        paidAmount:
+          type: number
+          title: Paidamount
+        remainingBalance:
+          type: number
+          title: Remainingbalance
+        status:
+          $ref: '#/components/schemas/BillStatus'
+        calculatedAt:
+          type: string
+          format: date-time
+          title: Calculatedat
+        charges:
+          $ref: '#/components/schemas/ChargeBreakdownDto'
+        usageRecords:
+          $ref: '#/components/schemas/UsageRecordPageDto'
+      type: object
+      required:
+      - subscriberNo
+      - year
+      - month
+      - billTotal
+      - paidAmount
+      - remainingBalance
+      - status
+      - calculatedAt
+      - charges
+      - usageRecords
+      title: BillDetailsResponse
+    BillStatus:
+      type: string
+      enum:
+      - UNPAID
+      - PARTIALLY_PAID
+      - PAID
+      title: BillStatus
+    BillSummaryResponse:
+      properties:
+        subscriberNo:
+          type: string
+          title: Subscriberno
+        year:
+          type: integer
+          title: Year
+        month:
+          type: integer
+          title: Month
+        currency:
+          type: string
+          const: USD
+          title: Currency
+          default: USD
+        billTotal:
+          type: number
+          title: Billtotal
+        paidAmount:
+          type: number
+          title: Paidamount
+        remainingBalance:
+          type: number
+          title: Remainingbalance
+        status:
+          $ref: '#/components/schemas/BillStatus'
+        calculatedAt:
+          type: string
+          format: date-time
+          title: Calculatedat
+      type: object
+      required:
+      - subscriberNo
+      - year
+      - month
+      - billTotal
+      - paidAmount
+      - remainingBalance
+      - status
+      - calculatedAt
+      title: BillSummaryResponse
+    CalculateBillResponse:
+      properties:
+        transactionStatus:
+          type: string
+          const: SUCCESS
+          title: Transactionstatus
+          default: SUCCESS
+        bill:
+          $ref: '#/components/schemas/BillSummaryResponse'
+      type: object
+      required:
+      - bill
+      title: CalculateBillResponse
+    ChargeBreakdownDto:
+      properties:
+        phone:
+          $ref: '#/components/schemas/PhoneChargeDto'
+        internet:
+          $ref: '#/components/schemas/InternetChargeDto'
+        total:
+          type: number
+          title: Total
+      type: object
+      required:
+      - phone
+      - internet
+      - total
+      title: ChargeBreakdownDto
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    InternetChargeDto:
+      properties:
+        mbUsed:
+          type: integer
+          title: Mbused
+        gbUsed:
+          type: number
+          title: Gbused
+        includedMb:
+          type: integer
+          title: Includedmb
+          default: 20000
+        basePrice:
+          type: number
+          title: Baseprice
+          default: 50.0
+        blockSizeMb:
+          type: integer
+          title: Blocksizemb
+          default: 10000
+        blockPrice:
+          type: number
+          title: Blockprice
+          default: 10.0
+        extraBlocks:
+          type: integer
+          title: Extrablocks
+        amount:
+          type: number
+          title: Amount
+      type: object
+      required:
+      - mbUsed
+      - gbUsed
+      - extraBlocks
+      - amount
+      title: InternetChargeDto
+    PayBillRequest:
+      properties:
+        amount:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+          title: Amount
+          examples:
+          - 40.0
+        transactionId:
+          type: string
+          maxLength: 64
+          minLength: 8
+          pattern: ^[A-Za-z0-9_-]+$
+          title: Transactionid
+          description: Client-generated idempotency key. Reusing it is rejected with
+            409.
+          examples:
+          - 7f1c2b9e-4d1a-4c3e-9a51-2f9a0d3c1b77
+      type: object
+      required:
+      - amount
+      - transactionId
+      title: PayBillRequest
+    PayBillResponse:
+      properties:
+        paymentStatus:
+          type: string
+          const: SUCCESS
+          title: Paymentstatus
+          default: SUCCESS
+        transactionId:
+          type: string
+          title: Transactionid
+        paidAmount:
+          type: number
+          title: Paidamount
+        totalPaid:
+          type: number
+          title: Totalpaid
+        remainingBalance:
+          type: number
+          title: Remainingbalance
+        billStatus:
+          $ref: '#/components/schemas/BillStatus'
+      type: object
+      required:
+      - transactionId
+      - paidAmount
+      - totalPaid
+      - remainingBalance
+      - billStatus
+      title: PayBillResponse
+    PhoneChargeDto:
+      properties:
+        minutesUsed:
+          type: integer
+          title: Minutesused
+        includedMinutes:
+          type: integer
+          title: Includedminutes
+          default: 1000
+        blockSizeMinutes:
+          type: integer
+          title: Blocksizeminutes
+          default: 1000
+        blockPrice:
+          type: number
+          title: Blockprice
+          default: 10.0
+        extraBlocks:
+          type: integer
+          title: Extrablocks
+        amount:
+          type: number
+          title: Amount
+      type: object
+      required:
+      - minutesUsed
+      - extraBlocks
+      - amount
+      title: PhoneChargeDto
+    ProblemDetails:
+      properties:
+        type:
+          type: string
+          title: Type
+        title:
+          type: string
+          title: Title
+        status:
+          type: integer
+          title: Status
+        detail:
+          type: string
+          title: Detail
+        code:
+          type: string
+          title: Code
+        instance:
+          type: string
+          title: Instance
+        requestId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Requestid
+        errors:
+          anyOf:
+          - items:
+              additionalProperties: true
+              type: object
+            type: array
+          - type: 'null'
+          title: Errors
+      type: object
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - code
+      - instance
+      title: ProblemDetails
+    UsageRecordDto:
+      properties:
+        usageId:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Usageid
+        usageType:
+          $ref: '#/components/schemas/UsageType'
+        quantity:
+          type: integer
+          title: Quantity
+        unit:
+          $ref: '#/components/schemas/UsageUnit'
+        recordedAt:
+          type: string
+          format: date-time
+          title: Recordedat
+      type: object
+      required:
+      - usageId
+      - usageType
+      - quantity
+      - unit
+      - recordedAt
+      title: UsageRecordDto
+    UsageRecordPageDto:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/UsageRecordDto'
+          type: array
+          title: Items
+        page:
+          type: integer
+          title: Page
+        pageSize:
+          type: integer
+          title: Pagesize
+        totalItems:
+          type: integer
+          title: Totalitems
+        totalPages:
+          type: integer
+          title: Totalpages
+      type: object
+      required:
+      - items
+      - page
+      - pageSize
+      - totalItems
+      - totalPages
+      title: UsageRecordPageDto
+    UsageType:
+      type: string
+      enum:
+      - PHONE
+      - INTERNET
+      title: UsageType
+    UsageUnit:
+      type: string
+      enum:
+      - MINUTE
+      - MB
+      title: UsageUnit
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+  securitySchemes:
+    HTTPBearer:
+      type: http
+      description: 'Cognito access token (local: dev token)'
+      scheme: bearer

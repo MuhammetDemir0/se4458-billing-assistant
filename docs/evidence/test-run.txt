@@ -1,0 +1,271 @@
+# Automated test run - 2026-11-20T21:08Z - Python 3.13.3 - command per service: pytest -v --cov=app
+
+################ services/billing-api ################
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-9.2.0, pluggy-1.7.0 -- <repo>\services\billing-api\.venv\Scripts\python.exe
+rootdir: <repo>\services\billing-api
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.16.0, cov-7.1.0
+collecting ... collected 77 items
+
+tests/api/test_endpoints.py::test_add_usage_success PASSED               [  1%]
+tests/api/test_endpoints.py::test_add_usage_requires_token PASSED        [  2%]
+tests/api/test_endpoints.py::test_add_usage_requires_admin_role PASSED   [  3%]
+tests/api/test_endpoints.py::test_add_usage_validates_body PASSED        [  5%]
+tests/api/test_endpoints.py::test_add_usage_unknown_subscriber PASSED    [  6%]
+tests/api/test_endpoints.py::test_invalid_subscriber_number_format PASSED [  7%]
+tests/api/test_endpoints.py::test_calculate_bill_success PASSED          [  9%]
+tests/api/test_endpoints.py::test_calculate_bill_rejects_subscriber_token PASSED [ 10%]
+tests/api/test_endpoints.py::test_calculate_bill_invalid_month PASSED    [ 11%]
+tests/api/test_endpoints.py::test_query_bill_is_public PASSED            [ 12%]
+tests/api/test_endpoints.py::test_query_bill_not_calculated PASSED       [ 14%]
+tests/api/test_endpoints.py::test_query_bill_detailed_owner PASSED       [ 15%]
+tests/api/test_endpoints.py::test_query_bill_detailed_admin_can_read_any PASSED [ 16%]
+tests/api/test_endpoints.py::test_query_bill_detailed_requires_token PASSED [ 18%]
+tests/api/test_endpoints.py::test_query_bill_detailed_other_subscriber_forbidden PASSED [ 19%]
+tests/api/test_endpoints.py::test_query_bill_detailed_page_size_limit PASSED [ 20%]
+tests/api/test_endpoints.py::test_expired_token_rejected PASSED          [ 22%]
+tests/api/test_endpoints.py::test_token_with_wrong_signature_rejected PASSED [ 23%]
+tests/api/test_endpoints.py::test_id_token_is_not_accepted PASSED        [ 24%]
+tests/api/test_endpoints.py::test_pay_bill_partial_then_full PASSED      [ 25%]
+tests/api/test_endpoints.py::test_pay_bill_duplicate_transaction PASSED  [ 27%]
+tests/api/test_endpoints.py::test_pay_bill_amount_exceeds_balance PASSED [ 28%]
+tests/api/test_endpoints.py::test_pay_bill_by_another_subscriber_forbidden PASSED [ 29%]
+tests/api/test_endpoints.py::test_pay_bill_requires_token PASSED         [ 31%]
+tests/api/test_endpoints.py::test_pay_bill_validation PASSED             [ 32%]
+tests/api/test_endpoints.py::test_pay_bill_not_calculated PASSED         [ 33%]
+tests/api/test_endpoints.py::test_openapi_and_swagger_are_versioned PASSED [ 35%]
+tests/api/test_endpoints.py::test_other_subscriber_fixture_is_distinct PASSED [ 36%]
+tests/integration/test_postgres.py::test_usage_aggregation_and_bill_storage PASSED [ 37%]
+tests/integration/test_postgres.py::test_duplicate_transaction_id_rejected PASSED [ 38%]
+tests/integration/test_postgres.py::test_concurrent_payments_cannot_overpay PASSED [ 40%]
+tests/integration/test_postgres.py::test_rotated_password_is_refreshed_on_connect PASSED [ 41%]
+tests/integration/test_postgres.py::test_concurrent_retry_with_same_transaction_id_is_a_conflict_not_an_error PASSED [ 42%]
+tests/integration/test_postgres.py::test_same_transaction_id_on_two_bills_is_a_conflict PASSED [ 44%]
+tests/unit/test_credentials.py::test_secret_is_cached_within_ttl PASSED  [ 45%]
+tests/unit/test_credentials.py::test_secret_is_reloaded_after_ttl PASSED [ 46%]
+tests/unit/test_credentials.py::test_refresh_after_rejected_password PASSED [ 48%]
+tests/unit/test_credentials.py::test_auth_failure_detection PASSED       [ 49%]
+tests/unit/test_credentials.py::test_local_auth_is_refused_outside_local_environments PASSED [ 50%]
+tests/unit/test_pricing.py::test_phone_charge_blocks[0-0] PASSED         [ 51%]
+tests/unit/test_pricing.py::test_phone_charge_blocks[1000-0] PASSED      [ 53%]
+tests/unit/test_pricing.py::test_phone_charge_blocks[1001-10] PASSED     [ 54%]
+tests/unit/test_pricing.py::test_phone_charge_blocks[2000-10] PASSED     [ 55%]
+tests/unit/test_pricing.py::test_phone_charge_blocks[2001-20] PASSED     [ 57%]
+tests/unit/test_pricing.py::test_phone_charge_blocks[5500-50] PASSED     [ 58%]
+tests/unit/test_pricing.py::test_internet_charge_blocks[0-50] PASSED     [ 59%]
+tests/unit/test_pricing.py::test_internet_charge_blocks[20000-50] PASSED [ 61%]
+tests/unit/test_pricing.py::test_internet_charge_blocks[20001-60] PASSED [ 62%]
+tests/unit/test_pricing.py::test_internet_charge_blocks[21000-60] PASSED [ 63%]
+tests/unit/test_pricing.py::test_internet_charge_blocks[30000-60] PASSED [ 64%]
+tests/unit/test_pricing.py::test_internet_charge_blocks[35000-70] PASSED [ 66%]
+tests/unit/test_pricing.py::test_internet_charge_blocks[40001-80] PASSED [ 67%]
+tests/unit/test_pricing.py::test_worked_example_from_guide_section_4_3 PASSED [ 68%]
+tests/unit/test_pricing.py::test_gb_uses_1000_mb_per_gb PASSED           [ 70%]
+tests/unit/test_pricing.py::test_negative_usage_is_rejected PASSED       [ 71%]
+tests/unit/test_services.py::test_add_phone_usage_records_ten_minutes PASSED [ 72%]
+tests/unit/test_services.py::test_add_internet_usage_records_one_mb PASSED [ 74%]
+tests/unit/test_services.py::test_add_usage_unknown_subscriber PASSED    [ 75%]
+tests/unit/test_services.py::test_add_usage_invalid_period[2026-0] PASSED [ 76%]
+tests/unit/test_services.py::test_add_usage_invalid_period[2026-13] PASSED [ 77%]
+tests/unit/test_services.py::test_add_usage_invalid_period[1999-5] PASSED [ 79%]
+tests/unit/test_services.py::test_calculate_bill_from_usage PASSED       [ 80%]
+tests/unit/test_services.py::test_calculate_bill_without_usage_charges_base_price PASSED [ 81%]
+tests/unit/test_services.py::test_recalculate_keeps_payments PASSED      [ 83%]
+tests/unit/test_services.py::test_calculate_bill_unknown_subscriber PASSED [ 84%]
+tests/unit/test_services.py::test_get_bill_not_calculated PASSED         [ 85%]
+tests/unit/test_services.py::test_bill_details_paging_and_breakdown PASSED [ 87%]
+tests/unit/test_services.py::test_bill_details_rejects_bad_page_size PASSED [ 88%]
+tests/unit/test_services.py::test_partial_payment PASSED                 [ 89%]
+tests/unit/test_services.py::test_full_payment_marks_bill_paid PASSED    [ 90%]
+tests/unit/test_services.py::test_duplicate_transaction_rejected_and_balance_preserved PASSED [ 92%]
+tests/unit/test_services.py::test_amount_exceeding_balance_rejected PASSED [ 93%]
+tests/unit/test_services.py::test_payment_on_paid_bill_rejected PASSED   [ 94%]
+tests/unit/test_services.py::test_invalid_amount_rejected[0] PASSED      [ 96%]
+tests/unit/test_services.py::test_invalid_amount_rejected[-5] PASSED     [ 97%]
+tests/unit/test_services.py::test_invalid_amount_rejected[10.001] PASSED [ 98%]
+tests/unit/test_services.py::test_payment_for_missing_bill PASSED        [100%]
+
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.13.3-final-0 _______________
+
+Name                                          Stmts   Miss  Cover
+-----------------------------------------------------------------
+app\__init__.py                                   0      0   100%
+app\api\__init__.py                               0      0   100%
+app\api\deps.py                                  46      4    91%
+app\api\v1\__init__.py                            0      0   100%
+app\api\v1\routers\__init__.py                    0      0   100%
+app\api\v1\routers\bills.py                      18      0   100%
+app\api\v1\routers\payments.py                   10      0   100%
+app\api\v1\routers\usage.py                      11      0   100%
+app\api\v1\schemas.py                            98      0   100%
+app\core\__init__.py                              0      0   100%
+app\core\config.py                               42      1    98%
+app\core\errors.py                               59      2    97%
+app\core\logging.py                              31      0   100%
+app\core\security.py                             58     16    72%
+app\db\__init__.py                                0      0   100%
+app\db\credentials.py                            31      2    94%
+app\db\orm_models.py                             46      0   100%
+app\db\session.py                                32      4    88%
+app\domain\__init__.py                            0      0   100%
+app\domain\enums.py                              11      0   100%
+app\domain\models.py                             78      0   100%
+app\domain\pricing.py                            34      0   100%
+app\repositories\__init__.py                      0      0   100%
+app\repositories\interfaces.py                   12      0   100%
+app\repositories\sqlalchemy_repositories.py      94      4    96%
+app\seed.py                                      42     42     0%
+app\services\__init__.py                          0      0   100%
+app\services\billing_service.py                  43      1    98%
+app\services\interfaces.py                       21      0   100%
+app\services\payment_service.py                  36      1    97%
+app\services\usage_service.py                    20      0   100%
+app\services\validation.py                        8      0   100%
+-----------------------------------------------------------------
+TOTAL                                           881     77    91%
+============================= 77 passed in 7.21s ==============================
+
+################ services/mcp-server ################
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-9.2.0, pluggy-1.7.0 -- <repo>\services\mcp-server\.venv\Scripts\python.exe
+rootdir: <repo>\services\mcp-server
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.16.0, asyncio-1.5.0, cov-7.1.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collected 41 items
+
+tests/test_bm25.py::test_defaults_and_stats PASSED                       [  2%]
+tests/test_bm25.py::test_rare_terms_have_higher_idf PASSED               [  4%]
+tests/test_bm25.py::test_ranking_prefers_matching_and_frequent_terms PASSED [  7%]
+tests/test_bm25.py::test_multi_term_query PASSED                         [  9%]
+tests/test_bm25.py::test_top_k_and_no_match PASSED                       [ 12%]
+tests/test_bm25.py::test_ties_are_deterministic PASSED                   [ 14%]
+tests/test_bm25.py::test_serialisation_roundtrip PASSED                  [ 17%]
+tests/test_indexer.py::test_section_ids_in_document_order PASSED         [ 19%]
+tests/test_indexer.py::test_headings_and_parent_headings PASSED          [ 21%]
+tests/test_indexer.py::test_chunk_text_is_section_body PASSED            [ 24%]
+tests/test_indexer.py::test_document_metadata PASSED                     [ 26%]
+tests/test_indexer.py::test_split_sections_ignores_preamble_empty_parents_and_code_headings PASSED [ 29%]
+tests/test_indexer.py::test_cli_writes_index_and_server_loads_it PASSED  [ 31%]
+tests/test_indexer.py::test_load_or_build_builds_once_when_index_missing PASSED [ 34%]
+tests/test_indexer.py::test_load_or_build_rebuilds_stale_index PASSED    [ 36%]
+tests/test_retrieval.py::test_extra_internet_cost PASSED                 [ 39%]
+tests/test_retrieval.py::test_partial_payment PASSED                     [ 41%]
+tests/test_retrieval.py::test_due_date_and_late_payment PASSED           [ 43%]
+tests/test_retrieval.py::test_dispute[How can I dispute a charge?] PASSED [ 46%]
+tests/test_retrieval.py::test_dispute[My bill is wrong, how do I file a complaint?] PASSED [ 48%]
+tests/test_retrieval.py::test_results_are_ranked_and_carry_section_references PASSED [ 51%]
+tests/test_retrieval.py::test_unrelated_query_returns_no_matches PASSED  [ 53%]
+tests/test_server.py::test_list_tools_exposes_schema PASSED              [ 56%]
+tests/test_server.py::test_call_tool_end_to_end PASSED                   [ 58%]
+tests/test_server.py::test_call_tool_validation_errors[arguments0] PASSED [ 60%]
+tests/test_server.py::test_call_tool_validation_errors[arguments1] PASSED [ 63%]
+tests/test_server.py::test_call_tool_validation_errors[arguments2] PASSED [ 65%]
+tests/test_server.py::test_call_tool_validation_errors[arguments3] PASSED [ 68%]
+tests/test_server.py::test_health_is_public PASSED                       [ 70%]
+tests/test_server.py::test_mcp_rejects_missing_or_wrong_token[None] PASSED [ 73%]
+tests/test_server.py::test_mcp_rejects_missing_or_wrong_token[Bearer wrong-token] PASSED [ 75%]
+tests/test_server.py::test_mcp_rejects_missing_or_wrong_token[Basic dGVzdA==] PASSED [ 78%]
+tests/test_server.py::test_mcp_rejects_missing_or_wrong_token[Bearer ] PASSED [ 80%]
+tests/test_server.py::test_mcp_rejects_missing_or_wrong_token[test-token-123] PASSED [ 82%]
+tests/test_server.py::test_mcp_accepts_valid_token PASSED                [ 85%]
+tests/test_server.py::test_no_token_configured_allows_requests PASSED    [ 87%]
+tests/test_text.py::test_tokenize_lowercases_and_strips_punctuation_and_stopwords PASSED [ 90%]
+tests/test_text.py::test_stemming_maps_inflections_to_same_term PASSED   [ 92%]
+tests/test_text.py::test_stemming_leaves_numbers_and_short_words PASSED  [ 95%]
+tests/test_text.py::test_synonym_expansion PASSED                        [ 97%]
+tests/test_text.py::test_expand_query_keeps_original_terms_first_without_duplicates PASSED [100%]
+
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.13.3-final-0 _______________
+
+Name              Stmts   Miss  Cover
+-------------------------------------
+app\__init__.py       0      0   100%
+app\auth.py          31      0   100%
+app\bm25.py          55      0   100%
+app\indexer.py      136      3    98%
+app\server.py        73     20    73%
+app\text.py          41      1    98%
+-------------------------------------
+TOTAL               336     24    93%
+============================= 41 passed in 2.24s ==============================
+
+################ services/agent ################
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-9.2.0, pluggy-1.7.0 -- <repo>\services\agent\.venv\Scripts\python.exe
+rootdir: <repo>\services\agent
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.16.0, asyncio-1.5.0, cov-7.1.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collected 37 items
+
+tests/test_api.py::test_login_and_chat PASSED                            [  2%]
+tests/test_api.py::test_wrong_password PASSED                            [  5%]
+tests/test_api.py::test_chat_requires_token PASSED                       [  8%]
+tests/test_api.py::test_chat_rejects_tampered_token PASSED               [ 10%]
+tests/test_api.py::test_admin_is_not_a_subscriber PASSED                 [ 13%]
+tests/test_api.py::test_conversation_is_private_to_its_owner PASSED      [ 16%]
+tests/test_api.py::test_payment_confirm_endpoint PASSED                  [ 18%]
+tests/test_api.py::test_payment_cancel_endpoint PASSED                   [ 21%]
+tests/test_api.py::test_message_validation PASSED                        [ 24%]
+tests/test_api.py::test_web_ui_is_served PASSED                          [ 27%]
+tests/test_api.py::test_cognito_login_uses_initiate_auth PASSED          [ 29%]
+tests/test_api.py::test_local_auth_is_refused_outside_local_environments PASSED [ 32%]
+tests/test_gemini_adapter.py::test_tool_specs_become_function_declarations PASSED [ 35%]
+tests/test_gemini_adapter.py::test_parse_function_calls_and_usage PASSED [ 37%]
+tests/test_gemini_adapter.py::test_parse_text_ignores_thoughts PASSED    [ 40%]
+tests/test_gemini_adapter.py::test_history_round_trip PASSED             [ 43%]
+tests/test_gemini_adapter.py::test_other_model_gets_rebuilt_parts_without_foreign_signatures PASSED [ 45%]
+tests/test_gemini_adapter.py::test_primary_model_is_used_when_healthy PASSED [ 48%]
+tests/test_gemini_adapter.py::test_overloaded_primary_falls_back_and_stays_there PASSED [ 51%]
+tests/test_gemini_adapter.py::test_both_models_down_raises_llm_error PASSED [ 54%]
+tests/test_gemini_adapter.py::test_assistant_message_without_raw_is_rebuilt PASSED [ 56%]
+tests/test_orchestrator.py::test_mcp_only_question PASSED                [ 59%]
+tests/test_orchestrator.py::test_rest_only_question_goes_through_gateway_with_user_token PASSED [ 62%]
+tests/test_orchestrator.py::test_combined_question_uses_rest_and_mcp PASSED [ 64%]
+tests/test_orchestrator.py::test_subscriber_number_in_prompt_or_args_is_ignored PASSED [ 67%]
+tests/test_orchestrator.py::test_payment_requires_explicit_confirmation PASSED [ 70%]
+tests/test_orchestrator.py::test_confirmation_cannot_be_replayed PASSED  [ 72%]
+tests/test_orchestrator.py::test_another_user_cannot_confirm_my_payment PASSED [ 75%]
+tests/test_orchestrator.py::test_prepare_rejects_amount_above_balance PASSED [ 78%]
+tests/test_orchestrator.py::test_paid_bill_has_nothing_to_pay PASSED     [ 81%]
+tests/test_orchestrator.py::test_failed_payment_can_be_retried PASSED    [ 83%]
+tests/test_orchestrator.py::test_api_errors_are_returned_to_the_llm PASSED [ 86%]
+tests/test_orchestrator.py::test_invalid_tool_arguments_are_reported PASSED [ 89%]
+tests/test_orchestrator.py::test_unknown_tool_is_rejected PASSED         [ 91%]
+tests/test_orchestrator.py::test_tool_round_limit PASSED                 [ 94%]
+tests/test_orchestrator.py::test_llm_failure_returns_friendly_message_and_keeps_history_clean PASSED [ 97%]
+tests/test_orchestrator.py::test_system_prompt_contains_identity_and_date PASSED [100%]
+
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.13.3-final-0 _______________
+
+Name                         Stmts   Miss  Cover
+------------------------------------------------
+app\__init__.py                  0      0   100%
+app\config.py                   47      3    94%
+app\conversations.py            44      7    84%
+app\identity.py                 89     17    81%
+app\llm\__init__.py              0      0   100%
+app\llm\base.py                 36      0   100%
+app\llm\gemini.py               86      8    91%
+app\llm\scripted.py             16      1    94%
+app\main.py                    134     16    88%
+app\mcp_demo.py                 23     23     0%
+app\orchestrator.py            121      8    93%
+app\payments.py                 59      4    93%
+app\prompts.py                   6      0   100%
+app\tools\__init__.py            0      0   100%
+app\tools\base.py                7      0   100%
+app\tools\billing_tools.py      90      9    90%
+app\tools\mcp_tools.py          57     18    68%
+app\trace.py                    49      1    98%
+------------------------------------------------
+TOTAL                          864    115    87%
+============================= 37 passed in 2.76s ==============================

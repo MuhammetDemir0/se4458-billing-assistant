@@ -1,0 +1,98 @@
+# Local stack that mirrors the AWS deployment:
+#
+#   browser/CLI --> Kong gateway (localhost:8080) --> billing-api --> postgres
+#                                                 \-> agent --> mcp-server (private)
+#                                                         \--> Gemini API (internet)
+#                                                         \--> Kong (all REST calls go through the gateway)
+#
+# Networks play the role of the AWS security groups: the agent cannot reach billing-api or postgres
+# directly, and only the agent can reach the MCP server. Only Kong publishes an application port.
+#
+#   cp .env.example .env    # put your GEMINI_API_KEY in .env
+#   docker compose up -d --build
+#   docker compose run --rm billing-api seed
+#   open http://localhost:8080/agent/chat
+name: billing-assistant
+
+x-local-auth: &local-auth
+  AUTH_MODE: local
+  JWT_SECRET: local-dev-secret-change-me-0123456789   # must match gateway/kong/kong.yml (local only)
+  JWT_ISSUER: local-dev-issuer
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: billing
+      POSTGRES_PASSWORD: billing
+      POSTGRES_DB: billing
+    ports:
+      - "127.0.0.1:5432:5432"   # only for integration tests / inspection from this machine
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/local/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks: [data, dbhost]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U billing -d billing"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  billing-api:
+    build: ./services/billing-api
+    environment:
+      <<: *local-auth
+      DB_HOST: postgres
+      DB_NAME: billing
+      DB_USER: billing
+      DB_PASSWORD: billing
+    networks: [data, backend]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  mcp-server:
+    build: ./services/mcp-server
+    environment:
+      MCP_TOKEN: ${MCP_TOKEN:-local-mcp-token-change-me}
+    networks: [mcp]
+
+  agent:
+    build: ./services/agent
+    environment:
+      <<: *local-auth
+      GATEWAY_URL: http://kong:8000
+      MCP_URL: http://mcp-server:8000/mcp
+      MCP_TOKEN: ${MCP_TOKEN:-local-mcp-token-change-me}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.6-flash}
+      GEMINI_FALLBACK_MODEL: ${GEMINI_FALLBACK_MODEL:-gemini-3.5-flash-lite}
+    networks: [mcp, agent, internet]
+    depends_on: [mcp-server]
+
+  kong:
+    image: kong:3.9
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/kong.yml
+      KONG_PROXY_LISTEN: 0.0.0.0:8000
+      KONG_ADMIN_LISTEN: "off"
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+    volumes:
+      - ./gateway/kong/kong.yml:/kong/kong.yml:ro
+    ports:
+      - "127.0.0.1:8080:8000"
+    networks: [backend, agent, internet]
+    depends_on: [billing-api, agent]
+
+networks:
+  data: { internal: true }      # postgres <-> billing-api
+  backend: { internal: true }   # kong <-> billing-api
+  mcp: { internal: true }       # agent <-> mcp-server
+  agent: { internal: true }     # kong <-> agent
+  internet: {}                  # outbound (Gemini) and the published gateway port
+  dbhost: {}                    # only postgres: lets the host reach 127.0.0.1:5432 for tests
+
+volumes:
+  pgdata:

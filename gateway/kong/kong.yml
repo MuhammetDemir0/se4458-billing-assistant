@@ -1,0 +1,60 @@
+# Kong (DB-less) - local equivalent of the AWS API Gateway configuration.
+# Same public routes, same rule: protected routes need a valid JWT, public routes are throttled.
+# The HS256 secret below is a LOCAL DEVELOPMENT value only; in AWS, tokens are RS256 from Amazon Cognito.
+_format_version: "3.0"
+
+services:
+  - name: billing-api
+    url: http://billing-api:8000
+    routes:
+      - name: billing-query-bill-public          # Query Bill: no authentication by specification
+        methods: [GET]
+        paths: ['~/api/v1/subscribers/\d{10}/bills/\d{4}/\d{1,2}$']
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config: { minute: 30, policy: local, limit_by: ip }
+      - name: billing-docs-public
+        methods: [GET]
+        paths: [/api/v1/docs, /api/v1/openapi.json, /api/v1/health]
+        strip_path: false
+      - name: billing-protected                  # details, payments, calculate, usage
+        paths: [/api/v1/subscribers]
+        strip_path: false
+        plugins:
+          - name: jwt
+            config: { key_claim_name: iss, claims_to_verify: [exp] }
+
+  - name: agent
+    url: http://agent:8000
+    routes:
+      - name: agent-ui-public
+        methods: [GET]
+        paths: ['~/agent/?$', /agent/chat, /agent/v1/health]
+        strip_path: false
+      - name: agent-login-public
+        methods: [POST]
+        paths: [/agent/v1/auth/login]
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config: { minute: 10, policy: local, limit_by: ip }
+      - name: agent-protected                    # chat and payment confirmation
+        paths: [/agent/v1/chat, /agent/v1/payments]
+        strip_path: false
+        plugins:
+          - name: jwt
+            config: { key_claim_name: iss, claims_to_verify: [exp] }
+
+consumers:
+  - username: local-dev-issuer
+    jwt_secrets:
+      - key: local-dev-issuer
+        algorithm: HS256
+        secret: local-dev-secret-change-me-0123456789
+
+plugins:
+  - name: correlation-id                         # X-Request-ID on every request, echoed back
+    config: { header_name: X-Request-ID, generator: uuid, echo_downstream: true }
+  - name: rate-limiting                          # default throttling for every route
+    config: { second: 20, minute: 300, policy: local, limit_by: ip }

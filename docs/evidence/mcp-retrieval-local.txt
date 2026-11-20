@@ -1,0 +1,120 @@
+# MCP server: http://mcp-server:8000/mcp
+# Tools discovered with list_tools:
+[
+  {
+    "name": "search_billing_documentation",
+    "description": "Search the Mobile Provider Billing Guide for policy and pricing passages. Returns the most relevant sections with section number, heading, parent heading, text and score.",
+    "inputSchema": {
+      "properties": {
+        "query": {
+          "description": "Natural-language question or keywords",
+          "title": "Query",
+          "type": "string"
+        },
+        "top_k": {
+          "default": 3,
+          "description": "Number of sections to return (1-10)",
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Top K",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "title": "search_billing_documentationArguments",
+      "type": "object"
+    }
+  }
+]
+
+# Retrieval test 1: How much does extra internet cost?
+{
+  "document": "Mobile_Provider_Billing_Guide.md",
+  "document_id": "MOB-BILLING-2026-01",
+  "query": "How much does extra internet cost?",
+  "matches": [
+    {
+      "section": "8.1",
+      "heading": "What is the cost of extra internet?",
+      "parent_heading": "Frequently asked questions",
+      "text": "Each additional 10 GB block beyond 20 GB costs $10. Partially used blocks are rounded up. See Section 3.2.",
+      "score": 9.8476
+    },
+    {
+      "section": "3.2",
+      "heading": "Additional internet blocks",
+      "parent_heading": "Internet pricing",
+      "text": "Each additional **10 GB block** costs **$10**. A partially used additional block is charged as a full block. For example, 20 GB costs $50; 21 GB costs $60; 30 GB costs $60; 35 GB costs $70.",
+      "score": 8.8226
+    },
+    {
+      "section": "2.2",
+      "heading": "Additional minutes",
+      "parent_heading": "Phone call pricing",
+      "text": "Each **additional 1,000-minute block** costs **$10**. A partially used additional block is charged as a full block. For example, 1,001 minutes costs $10 in phone charges; 2,001 minutes costs $20.",
+      "score": 7.3242
+    }
+  ]
+}
+
+# Retrieval test 2: Can I pay only part of my bill?
+{
+  "document": "Mobile_Provider_Billing_Guide.md",
+  "document_id": "MOB-BILLING-2026-01",
+  "query": "Can I pay only part of my bill?",
+  "matches": [
+    {
+      "section": "8.3",
+      "heading": "Can I pay only part of my bill?",
+      "parent_heading": "Frequently asked questions",
+      "text": "Yes. The unpaid remainder stays outstanding, and the bill is not fully paid until the balance reaches zero. See Section 5.1.",
+      "score": 9.4421
+    },
+    {
+      "section": "5.1",
+      "heading": "Full and partial payments",
+      "parent_heading": "Payments and outstanding balances",
+      "text": "Subscribers may make full or partial payments. A partial payment reduces the outstanding balance but does **not** mark the bill fully paid.",
+      "score": 5.6928
+    },
+    {
+      "section": "5.3",
+      "heading": "Payment result",
+      "parent_heading": "Payments and outstanding balances",
+      "text": "The assistant should report success only after the Pay Bill API confirms the transaction. Retries should use idempotency protection to avoid duplicate payment records.",
+      "score": 4.9104
+    }
+  ]
+}
+
+# Retrieval test 3: When is my bill due and what happens if I pay late?
+{
+  "document": "Mobile_Provider_Billing_Guide.md",
+  "document_id": "MOB-BILLING-2026-01",
+  "query": "When is my bill due and what happens if I pay late?",
+  "matches": [
+    {
+      "section": "6.2",
+      "heading": "Late payment reminder",
+      "parent_heading": "Late payments and restrictions",
+      "text": "An unpaid bill may trigger a reminder after its due date. The reminder itself does not add a fee.",
+      "score": 10.5715
+    },
+    {
+      "section": "6.3",
+      "heading": "Service restriction",
+      "parent_heading": "Late payments and restrictions",
+      "text": "Service **may** be restricted when a bill remains unpaid for **30 days after the due date**, subject to customer support review. This is a policy description, not a live service-status check.",
+      "score": 7.4437
+    },
+    {
+      "section": "6.1",
+      "heading": "Due date",
+      "parent_heading": "Late payments and restrictions",
+      "text": "A monthly bill is due **15 calendar days after the end of its billing month**. For example, an October 2026 bill is due November 15, 2026.",
+      "score": 7.4222
+    }
+  ]
+}
