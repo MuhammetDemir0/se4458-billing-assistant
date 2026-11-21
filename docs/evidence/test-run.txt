@@ -1,4 +1,4 @@
-# Automated test run - 2026-11-20T21:08Z - Python 3.13.3 - command per service: pytest -v --cov=app
+# Automated test run - 2026-11-21T11:07Z - Python 3.13.3 - command per service: pytest -v --cov=app
 
 ################ services/billing-api ################
 ============================= test session starts =============================
@@ -117,7 +117,7 @@ app\domain\pricing.py                            34      0   100%
 app\repositories\__init__.py                      0      0   100%
 app\repositories\interfaces.py                   12      0   100%
 app\repositories\sqlalchemy_repositories.py      94      4    96%
-app\seed.py                                      42     42     0%
+app\seed.py                                      48     48     0%
 app\services\__init__.py                          0      0   100%
 app\services\billing_service.py                  43      1    98%
 app\services\interfaces.py                       21      0   100%
@@ -125,8 +125,8 @@ app\services\payment_service.py                  36      1    97%
 app\services\usage_service.py                    20      0   100%
 app\services\validation.py                        8      0   100%
 -----------------------------------------------------------------
-TOTAL                                           881     77    91%
-============================= 77 passed in 7.21s ==============================
+TOTAL                                           887     83    91%
+============================= 77 passed in 7.45s ==============================
 
 ################ services/mcp-server ################
 ============================= test session starts =============================
@@ -193,7 +193,7 @@ app\server.py        73     20    73%
 app\text.py          41      1    98%
 -------------------------------------
 TOTAL               336     24    93%
-============================= 41 passed in 2.24s ==============================
+============================= 41 passed in 2.56s ==============================
 
 ################ services/agent ################
 ============================= test session starts =============================
@@ -203,45 +203,49 @@ configfile: pyproject.toml
 testpaths: tests
 plugins: anyio-4.16.0, asyncio-1.5.0, cov-7.1.0
 asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
-collecting ... collected 37 items
+collecting ... collected 41 items
 
 tests/test_api.py::test_login_and_chat PASSED                            [  2%]
-tests/test_api.py::test_wrong_password PASSED                            [  5%]
-tests/test_api.py::test_chat_requires_token PASSED                       [  8%]
-tests/test_api.py::test_chat_rejects_tampered_token PASSED               [ 10%]
-tests/test_api.py::test_admin_is_not_a_subscriber PASSED                 [ 13%]
-tests/test_api.py::test_conversation_is_private_to_its_owner PASSED      [ 16%]
-tests/test_api.py::test_payment_confirm_endpoint PASSED                  [ 18%]
-tests/test_api.py::test_payment_cancel_endpoint PASSED                   [ 21%]
-tests/test_api.py::test_message_validation PASSED                        [ 24%]
-tests/test_api.py::test_web_ui_is_served PASSED                          [ 27%]
-tests/test_api.py::test_cognito_login_uses_initiate_auth PASSED          [ 29%]
-tests/test_api.py::test_local_auth_is_refused_outside_local_environments PASSED [ 32%]
-tests/test_gemini_adapter.py::test_tool_specs_become_function_declarations PASSED [ 35%]
-tests/test_gemini_adapter.py::test_parse_function_calls_and_usage PASSED [ 37%]
-tests/test_gemini_adapter.py::test_parse_text_ignores_thoughts PASSED    [ 40%]
-tests/test_gemini_adapter.py::test_history_round_trip PASSED             [ 43%]
-tests/test_gemini_adapter.py::test_other_model_gets_rebuilt_parts_without_foreign_signatures PASSED [ 45%]
-tests/test_gemini_adapter.py::test_primary_model_is_used_when_healthy PASSED [ 48%]
-tests/test_gemini_adapter.py::test_overloaded_primary_falls_back_and_stays_there PASSED [ 51%]
-tests/test_gemini_adapter.py::test_both_models_down_raises_llm_error PASSED [ 54%]
-tests/test_gemini_adapter.py::test_assistant_message_without_raw_is_rebuilt PASSED [ 56%]
-tests/test_orchestrator.py::test_mcp_only_question PASSED                [ 59%]
-tests/test_orchestrator.py::test_rest_only_question_goes_through_gateway_with_user_token PASSED [ 62%]
-tests/test_orchestrator.py::test_combined_question_uses_rest_and_mcp PASSED [ 64%]
-tests/test_orchestrator.py::test_subscriber_number_in_prompt_or_args_is_ignored PASSED [ 67%]
+tests/test_api.py::test_wrong_password PASSED                            [  4%]
+tests/test_api.py::test_chat_requires_token PASSED                       [  7%]
+tests/test_api.py::test_chat_rejects_tampered_token PASSED               [  9%]
+tests/test_api.py::test_admin_is_not_a_subscriber PASSED                 [ 12%]
+tests/test_api.py::test_conversation_is_private_to_its_owner PASSED      [ 14%]
+tests/test_api.py::test_payment_confirm_endpoint PASSED                  [ 17%]
+tests/test_api.py::test_payment_cancel_endpoint PASSED                   [ 19%]
+tests/test_api.py::test_message_validation PASSED                        [ 21%]
+tests/test_api.py::test_web_ui_is_served PASSED                          [ 24%]
+tests/test_api.py::test_cognito_login_uses_initiate_auth PASSED          [ 26%]
+tests/test_api.py::test_local_auth_is_refused_outside_local_environments PASSED [ 29%]
+tests/test_gemini_adapter.py::test_tool_specs_become_function_declarations PASSED [ 31%]
+tests/test_gemini_adapter.py::test_parse_function_calls_and_usage PASSED [ 34%]
+tests/test_gemini_adapter.py::test_parse_text_ignores_thoughts PASSED    [ 36%]
+tests/test_gemini_adapter.py::test_history_round_trip PASSED             [ 39%]
+tests/test_gemini_adapter.py::test_other_model_gets_rebuilt_parts_without_foreign_signatures PASSED [ 41%]
+tests/test_gemini_adapter.py::test_primary_model_is_used_when_healthy PASSED [ 43%]
+tests/test_gemini_adapter.py::test_overloaded_primary_falls_back_and_stays_there PASSED [ 46%]
+tests/test_gemini_adapter.py::test_slow_primary_is_cut_off_and_fallback_answers PASSED [ 48%]
+tests/test_gemini_adapter.py::test_little_budget_left_skips_primary PASSED [ 51%]
+tests/test_gemini_adapter.py::test_thinking_level_is_sent_to_gemini PASSED [ 53%]
+tests/test_gemini_adapter.py::test_both_models_down_raises_llm_error PASSED [ 56%]
+tests/test_gemini_adapter.py::test_assistant_message_without_raw_is_rebuilt PASSED [ 58%]
+tests/test_orchestrator.py::test_mcp_only_question PASSED                [ 60%]
+tests/test_orchestrator.py::test_rest_only_question_goes_through_gateway_with_user_token PASSED [ 63%]
+tests/test_orchestrator.py::test_combined_question_uses_rest_and_mcp PASSED [ 65%]
+tests/test_orchestrator.py::test_subscriber_number_in_prompt_or_args_is_ignored PASSED [ 68%]
 tests/test_orchestrator.py::test_payment_requires_explicit_confirmation PASSED [ 70%]
-tests/test_orchestrator.py::test_confirmation_cannot_be_replayed PASSED  [ 72%]
+tests/test_orchestrator.py::test_confirmation_cannot_be_replayed PASSED  [ 73%]
 tests/test_orchestrator.py::test_another_user_cannot_confirm_my_payment PASSED [ 75%]
 tests/test_orchestrator.py::test_prepare_rejects_amount_above_balance PASSED [ 78%]
-tests/test_orchestrator.py::test_paid_bill_has_nothing_to_pay PASSED     [ 81%]
-tests/test_orchestrator.py::test_failed_payment_can_be_retried PASSED    [ 83%]
-tests/test_orchestrator.py::test_api_errors_are_returned_to_the_llm PASSED [ 86%]
-tests/test_orchestrator.py::test_invalid_tool_arguments_are_reported PASSED [ 89%]
-tests/test_orchestrator.py::test_unknown_tool_is_rejected PASSED         [ 91%]
-tests/test_orchestrator.py::test_tool_round_limit PASSED                 [ 94%]
-tests/test_orchestrator.py::test_llm_failure_returns_friendly_message_and_keeps_history_clean PASSED [ 97%]
-tests/test_orchestrator.py::test_system_prompt_contains_identity_and_date PASSED [100%]
+tests/test_orchestrator.py::test_paid_bill_has_nothing_to_pay PASSED     [ 80%]
+tests/test_orchestrator.py::test_failed_payment_can_be_retried PASSED    [ 82%]
+tests/test_orchestrator.py::test_api_errors_are_returned_to_the_llm PASSED [ 85%]
+tests/test_orchestrator.py::test_invalid_tool_arguments_are_reported PASSED [ 87%]
+tests/test_orchestrator.py::test_unknown_tool_is_rejected PASSED         [ 90%]
+tests/test_orchestrator.py::test_tool_round_limit PASSED                 [ 92%]
+tests/test_orchestrator.py::test_llm_failure_returns_friendly_message_and_keeps_history_clean PASSED [ 95%]
+tests/test_orchestrator.py::test_system_prompt_contains_identity_and_date PASSED [ 97%]
+tests/test_orchestrator.py::test_turn_budget_keeps_the_answer_inside_the_gateway_timeout PASSED [100%]
 
 =============================== tests coverage ================================
 _______________ coverage: platform win32, python 3.13.3-final-0 _______________
@@ -249,16 +253,16 @@ _______________ coverage: platform win32, python 3.13.3-final-0 _______________
 Name                         Stmts   Miss  Cover
 ------------------------------------------------
 app\__init__.py                  0      0   100%
-app\config.py                   47      3    94%
+app\config.py                   49      3    94%
 app\conversations.py            44      7    84%
-app\identity.py                 89     17    81%
+app\identity.py                 92     18    80%
 app\llm\__init__.py              0      0   100%
-app\llm\base.py                 36      0   100%
-app\llm\gemini.py               86      8    91%
+app\llm\base.py                 37      0   100%
+app\llm\gemini.py              101      4    96%
 app\llm\scripted.py             16      1    94%
 app\main.py                    134     16    88%
 app\mcp_demo.py                 23     23     0%
-app\orchestrator.py            121      8    93%
+app\orchestrator.py            129      8    94%
 app\payments.py                 59      4    93%
 app\prompts.py                   6      0   100%
 app\tools\__init__.py            0      0   100%
@@ -267,5 +271,5 @@ app\tools\billing_tools.py      90      9    90%
 app\tools\mcp_tools.py          57     18    68%
 app\trace.py                    49      1    98%
 ------------------------------------------------
-TOTAL                          864    115    87%
-============================= 37 passed in 2.76s ==============================
+TOTAL                          893    112    87%
+============================= 41 passed in 5.89s ==============================

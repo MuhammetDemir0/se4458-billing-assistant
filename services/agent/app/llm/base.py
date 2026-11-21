@@ -60,4 +60,7 @@ class LLMError(Exception):
 class LLMClient(Protocol):
     model: str
 
-    async def generate(self, system: str, messages: list[Message], tools: list[ToolSpec]) -> LLMResponse: ...
+    async def generate(self, system: str, messages: list[Message], tools: list[ToolSpec],
+                       timeout: float | None = None) -> LLMResponse:
+        """`timeout` is the time left in the current chat turn; the call must not take longer."""
+        ...

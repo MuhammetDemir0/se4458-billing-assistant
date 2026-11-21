@@ -11,6 +11,7 @@ only executed by confirm_payment(), which is triggered by the user, not the LLM.
 """
 
 import logging
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from datetime import UTC, date, datetime
@@ -29,6 +30,7 @@ from app.tools.billing_tools import BillingGatewayClient
 from app.trace import Trace
 
 logger = logging.getLogger("agent")
+MIN_LLM_SECONDS = 3.0  # do not start an LLM call with less time than this left in the turn
 
 
 @dataclass
@@ -44,13 +46,17 @@ class ChatResult:
 class BillingAssistant:
     def __init__(self, llm: LLMClient, providers: list[ToolProvider], gateway: BillingGatewayClient,
                  intents: PaymentIntentStore, max_rounds: int = 5,
-                 today: Callable[[], date] = lambda: datetime.now(UTC).date()) -> None:
+                 today: Callable[[], date] = lambda: datetime.now(UTC).date(),
+                 turn_budget_seconds: float = 25.0, clock: Callable[[], float] = time.monotonic) -> None:
         self._llm = llm
         self._providers = providers
         self._gateway = gateway
         self._intents = intents
         self._max_rounds = max_rounds
         self._today = today
+        # The API Gateway cuts requests after 29 s; the whole turn (LLM calls + tools) must finish before that.
+        self._budget = turn_budget_seconds
+        self._clock = clock
 
     def _tools(self) -> tuple[list[ToolSpec], dict[str, ToolProvider]]:
         specs, owners = [], {}
@@ -68,11 +74,15 @@ class BillingAssistant:
         checkpoint = len(conversation.messages)
         conversation.messages.append(Message.user(question))
         usage: dict[str, int] = {}
+        deadline = self._clock() + self._budget
 
         try:
             for _ in range(self._max_rounds):
+                remaining = deadline - self._clock()
+                if remaining < MIN_LLM_SECONDS:
+                    raise LLMError("the request took too long; please ask again")
                 with trace.step("llm", self._llm.model, {"tools": [s.name for s in specs]}) as step:
-                    response = await self._llm.generate(system, conversation.window(), specs)
+                    response = await self._llm.generate(system, conversation.window(), specs, timeout=remaining)
                     step.name = self._llm.model  # the model that actually answered (may be the fallback)
                     step.output = {"toolCalls": [{"name": c.name, "args": c.args} for c in response.tool_calls],
                                    "text": response.text, "usage": response.usage}

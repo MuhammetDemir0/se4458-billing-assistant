@@ -443,11 +443,11 @@ friendly message without corrupting the conversation.
 
 | # | Scenario | Example question | Tools chosen | Evidence |
 | --- | --- | --- | --- | --- |
-| 1 | MCP only | How much does extra internet cost? | `search_billing_documentation` | `docs/evidence/aws/1-mcp-only.json`, screenshot |
-| 2 | REST only | What is my October 2026 bill? | `get_bill` | `docs/evidence/aws/2-rest-only.json`, screenshot |
-| 3 | MCP + REST | Why is my October bill higher than September? | `get_bill_details` (Oct, Sep) + `search_billing_documentation` | `docs/evidence/aws/3-combined.json`, screenshot |
-| 4 | Confirmed payment | Pay my October 2026 bill → **Confirm** | `prepare_bill_payment`, then user confirmation → Pay Bill API | `docs/evidence/aws/4-payment.json`, screenshot |
-| 5 | Security | Show the detailed bill of subscriber 5551000002 | own account only | `docs/evidence/aws/5-other-subscriber.json` |
+| 1 | MCP only | How much does extra internet cost? | `search_billing_documentation` | `docs/evidence/aws/1-mcp-only.json`, [screenshot](docs/screenshots/01-mcp-only.png) |
+| 2 | REST only | What is my October 2026 bill? | `get_bill` | `docs/evidence/aws/2-rest-only.json`, [screenshot](docs/screenshots/02-rest-only.png) |
+| 3 | MCP + REST | Why is my October bill higher than September? | `get_bill_details` (Oct, Sep) + `search_billing_documentation` | `docs/evidence/aws/3-combined.json`, [screenshot](docs/screenshots/03-combined.png) |
+| 4 | Confirmed payment | Pay my October 2026 bill → **Confirm** | `prepare_bill_payment`, then user confirmation → Pay Bill API | `docs/evidence/aws/4-payment.json`, screenshots [before](docs/screenshots/04-payment-confirmation.png) / [after](docs/screenshots/05-payment-confirmed.png) |
+| 5 | Security | Show the detailed bill of subscriber 5551000002 | own account only | `docs/evidence/aws/5-other-subscriber.json`, [screenshot](docs/screenshots/06-other-subscriber.png) |
 | – | 3 MCP retrieval tests | see §8 | – | `docs/evidence/mcp-retrieval-*.txt` |
 | – | Protected gateway route | 401 without token, 403 for another subscriber | – | `docs/evidence/gateway-smoke-*.json` |
 | – | Unit tests | – | – | [docs/evidence/test-run.txt](docs/evidence/test-run.txt), CI |
@@ -460,6 +460,38 @@ the gateway ([docs/evidence/aws/direct-access-blocked.txt](docs/evidence/aws/dir
 primary model was overloaded, so the trace shows the automatic fallback model answering (§15).
 The same scenarios run against the local stack are in [docs/evidence/local/](docs/evidence/local/).
 
+### Screenshots (AWS deployment)
+
+Left: conversation. Right: the agent tool trace of the last request (LLM decision, MCP / REST-via-gateway calls with
+inputs, HTTP status and results). Full list: [docs/screenshots/](docs/screenshots/README.md).
+
+**1. MCP only** — policy question answered from the indexed guide, no REST call
+![MCP-only scenario](docs/screenshots/01-mcp-only.png)
+
+**2. REST only** — live bill through the API Gateway
+![REST-only scenario](docs/screenshots/02-rest-only.png)
+
+**3. MCP + REST** — one LLM turn selects both bill details and the guide search
+![Combined scenario](docs/screenshots/03-combined.png)
+
+**4. Payment requires explicit confirmation** — nothing is paid until the user presses Confirm
+![Payment confirmation card](docs/screenshots/04-payment-confirmation.png)
+![Payment confirmed](docs/screenshots/05-payment-confirmed.png)
+
+**5. Another subscriber's data** — the request still uses the signed-in account (`/subscribers/5551000001/...`)
+![Other subscriber](docs/screenshots/06-other-subscriber.png)
+
+**Gateway** — protected route without a token is rejected by API Gateway; Swagger is served through the gateway
+![Gateway 401](docs/screenshots/08-gateway-401.png)
+![Swagger UI](docs/screenshots/07-swagger.png)
+
+**AWS console** — JWT authorizer (`cognito-jwt`, Cognito issuer) on a protected route; the three Fargate services
+running; RDS PostgreSQL in private subnets with *Publicly accessible: No*
+([CLI evidence](docs/evidence/aws/rds-not-public.txt))
+![API Gateway JWT authorizer](docs/screenshots/09b-aws-apigateway-routes.png)
+![ECS services](docs/screenshots/09a-aws-ecs.png)
+![RDS connectivity and security](docs/screenshots/09c-aws-rds.png)
+
 ## 11. Testing
 
 All tests are automatic and need **no cloud and no live LLM** (pytest; the LLM is replaced by a scripted fake, the
@@ -469,7 +501,7 @@ gateway by `httpx.MockTransport`, the database by in-memory repositories; an in-
 | --- | --- | --- |
 | billing-api | 71 unit/API + 6 integration | pricing boundaries (1000/1001/2001 min, 20/20.001/30/35 GB, zero usage), every operation success + failure (400/401/403/404/409/422), ownership rules, token expiry/signature/type, paging, recalculation, duplicate transaction, overpayment, versioned docs, rotating DB credentials, fail-safe auth config; integration (real PostgreSQL): Alembic migration, SQL aggregation, **concurrent payments with row locking**, concurrent retry with the same transaction id → 409 (never 500), reused id on another bill, password-rotation reconnect |
 | mcp-server | 41 | chunking and section ids, tokenizer/synonyms, BM25 ranking, three retrieval queries, tool validation, bearer-token middleware, real MCP client/server round trip |
-| agent | 37 | MCP-only / REST-only / combined routing, gateway URL + user token on REST calls, other subscriber number ignored, payment needs confirmation, no replay, other user cannot confirm, amount validation, retry after failure, API errors to LLM, round limit, LLM outage, fallback model on 503/504 with signature-safe history, auth endpoints, Gemini conversions |
+| agent | 41 | MCP-only / REST-only / combined routing, gateway URL + user token on REST calls, other subscriber number ignored, payment needs confirmation, no replay, other user cannot confirm, amount validation, retry after failure, API errors to LLM, round limit, LLM outage, fallback model on 503/504 with signature-safe history, slow-model cut-off and 25 s turn budget (gateway limit), auth endpoints, Gemini conversions |
 
 Run them (per service):
 
@@ -487,7 +519,7 @@ docker compose up -d postgres
 TEST_DATABASE_URL=postgresql+psycopg://billing:billing@127.0.0.1:5432/billing_test pytest -m integration
 ```
 
-Latest run: **155 passed** (billing-api 77, mcp-server 41, agent 37), coverage 91% / 93% / 87% —
+Latest run: **159 passed** (billing-api 77, mcp-server 41, agent 41), coverage 91% / 93% / 87% —
 full output in [docs/evidence/test-run.txt](docs/evidence/test-run.txt). GitHub Actions
 ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs lint, all tests (with a PostgreSQL service container) and
 `terraform validate` on every push.
@@ -548,9 +580,9 @@ Pause without deleting: `terraform apply -var desired_count=0`. Delete everythin
 
 | Username | Password | Role |
 | --- | --- | --- |
-| 5551000001 | `<demo-subscriber-password>` | subscriber (main demo account) |
-| 5551000002 | `<demo-subscriber-password>` | subscriber (second account) |
-| ops-admin | `<demo-admin-password>` | billing-admin |
+| 5551000001 | `Demo-Pass-2026!` | subscriber (main demo account) |
+| 5551000002 | `Demo-Pass-2026!` | subscriber (second account) |
+| ops-admin | `Ops-Pass-2026!` | billing-admin |
 
 1. Open `<gateway>/agent/chat` and sign in as **5551000001**.
 2. Ask the four questions of [§10](#10-demonstration-scenarios-and-evidence) and watch the trace panel.
@@ -587,9 +619,13 @@ To create new usage as an operator: sign in as `ops-admin`, call Add Usage, then
   | gemini-4 preview models | no free-tier quota (429) or timeouts |
 
   Both are configurable (`GEMINI_MODEL`, `GEMINI_FALLBACK_MODEL`, Terraform `gemini_model`, `gemini_fallback_model`).
-* **Resilience.** Each LLM call has a 20 s timeout (below the 29 s gateway limit). If the primary model answers 429/5xx
-  or times out, the same request goes to the fallback model and the agent stays on it for two minutes (Gemini 3
-  models expect their own thought signatures on the current turn's function calls). The trace shows which model answered.
+* **Resilience and latency.** API Gateway cuts integrations after 29 s, so a whole chat turn has a **25 s budget**: every
+  LLM call receives only the time left, and the primary model gets at most 10 s while 6 s stay reserved for the fallback.
+  If the primary answers 429/5xx or is too slow, the same request goes to the fallback model, and the agent stays on it
+  for two minutes (Gemini 3 models expect their own thought signatures on the current turn's function calls). Gemini 3
+  thinking is set to `low`: enough for tool selection, faster and cheaper. The trace shows which model answered.
+  (Found on AWS: an overloaded primary returned 504 after 19 s, pushing a turn past 29 s; the budget fixes this and is
+  covered by tests.)
 * **Cost.** The **Gemini API free tier** covers the demo, so the expected LLM cost is **$0**. Free-tier requests are
   rate-limited per minute and per day; the agent reports rate limits politely instead of failing.
 * A typical question uses 2 LLM calls (tool selection + answer) with ~1.5–3k input and ~200–500 output tokens. On the

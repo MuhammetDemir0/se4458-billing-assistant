@@ -18,8 +18,10 @@ class ScriptedLLMClient:
         self._steps = list(steps)
         self.calls: list[dict] = []
 
-    async def generate(self, system: str, messages: list[Message], tools: list[ToolSpec]) -> LLMResponse:
-        self.calls.append({"system": system, "messages": list(messages), "tools": [t.name for t in tools]})
+    async def generate(self, system: str, messages: list[Message], tools: list[ToolSpec],
+                       timeout: float | None = None) -> LLMResponse:
+        self.calls.append({"system": system, "messages": list(messages), "tools": [t.name for t in tools],
+                           "timeout": timeout})
         if not self._steps:
             raise LLMError("Script exhausted")
         step = self._steps.pop(0)

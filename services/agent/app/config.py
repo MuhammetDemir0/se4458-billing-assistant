@@ -35,7 +35,10 @@ class Settings(BaseSettings):
     gemini_model: str = "gemini-3.6-flash"
     # Used when the primary model is overloaded or rate-limited (empty = no fallback).
     gemini_fallback_model: str = "gemini-3.5-flash-lite"
-    llm_timeout_seconds: float = 20.0  # below the 29 s API Gateway integration timeout
+    llm_timeout_seconds: float = 10.0  # per LLM call; slower primary calls switch to the fallback model
+    gemini_thinking_level: str = "low"  # Gemini 3 thinking depth: enough for tool selection, faster and cheaper
+    # Whole chat turn (all LLM calls + tools); must stay below the API Gateway's 29 s integration timeout.
+    chat_turn_budget_seconds: float = 25.0
     llm_max_output_tokens: int = 2048
     max_tool_rounds: int = 5
 

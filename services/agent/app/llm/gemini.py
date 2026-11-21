@@ -4,6 +4,7 @@ Automatic function calling is disabled: Gemini only *selects* tools and
 arguments; the agent executes them and sends the results back.
 """
 
+import asyncio
 import time
 import uuid
 from dataclasses import dataclass
@@ -81,28 +82,33 @@ def parse_response(response: types.GenerateContentResponse, model: str = "") -> 
 
 
 RETRYABLE = {429, 500, 503, 504}
+FALLBACK_RESERVE_SECONDS = 6.0  # time kept for the fallback model when the primary is tried first
+MIN_ATTEMPT_SECONDS = 2.0
 
 
 class GeminiLLMClient:
-    """Gemini with a request timeout and an optional fallback model.
+    """Gemini with time limits and an optional fallback model.
 
-    If the primary model is overloaded or rate-limited (429/5xx/timeout), the same request is sent to the
-    fallback model, and the client stays on the fallback for `sticky_seconds`. Staying put matters because
-    Gemini 3 models expect their own thought signatures back on the function calls of the current turn.
+    * Each call gets at most `timeout_seconds`, and never more than the caller's remaining budget
+      (`timeout` argument), so a whole chat turn stays below the API Gateway's 29 s limit.
+    * If the primary model is overloaded, rate-limited or too slow, the request goes to the fallback model,
+      and the client stays on the fallback for `sticky_seconds`. Staying put matters because Gemini 3
+      models expect their own thought signatures back on the function calls of the current turn.
     """
 
     def __init__(self, api_key: str, model: str, max_output_tokens: int = 2048, *,
-                 fallback_model: str | None = None, timeout_seconds: float = 20.0,
-                 sticky_seconds: float = 120.0) -> None:
+                 fallback_model: str | None = None, timeout_seconds: float = 10.0,
+                 sticky_seconds: float = 120.0, thinking_level: str | None = "low") -> None:
         if not api_key:
             raise ValueError("GEMINI_API_KEY is not set.")
-        self._client = genai.Client(api_key=api_key,
-                                    http_options=types.HttpOptions(timeout=int(timeout_seconds * 1000)))
+        self._client = genai.Client(api_key=api_key)
         self.primary = model
         self.fallback = fallback_model if fallback_model and fallback_model != model else None
         self.model = model  # model used for the latest response (shown in the trace)
         self._max_output_tokens = max_output_tokens
+        self._timeout = timeout_seconds
         self._sticky = sticky_seconds
+        self._thinking_level = thinking_level
         self._fallback_until = 0.0
 
     def _order(self) -> list[str]:
@@ -110,30 +116,46 @@ class GeminiLLMClient:
             return [self.fallback]
         return [self.primary] + ([self.fallback] if self.fallback else [])
 
-    async def generate(self, system: str, messages: list[Message], tools: list[ToolSpec]) -> LLMResponse:
+    def _use_fallback_for_a_while(self, model: str) -> None:
+        if model == self.primary and self.fallback:
+            self._fallback_until = time.monotonic() + self._sticky
+
+    async def generate(self, system: str, messages: list[Message], tools: list[ToolSpec],
+                       timeout: float | None = None) -> LLMResponse:
         config = types.GenerateContentConfig(
             system_instruction=system,
             tools=to_tools(tools),
             automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
             max_output_tokens=self._max_output_tokens,
+            thinking_config=types.ThinkingConfig(thinking_level=self._thinking_level) if self._thinking_level else None,
         )
+        deadline = time.monotonic() + (timeout if timeout is not None else 60.0)
+        order = self._order()
         last_error: Exception | None = None
-        for model in self._order():
+        for model in order:
+            remaining = deadline - time.monotonic()
+            has_backup = model == self.primary and len(order) > 1
+            limit = min(self._timeout, remaining - (FALLBACK_RESERVE_SECONDS if has_backup else 0.0))
+            if limit < MIN_ATTEMPT_SECONDS:
+                if has_backup:
+                    continue  # not enough time for both: go straight to the faster fallback
+                break
             try:
-                response = await self._client.aio.models.generate_content(
-                    model=model, contents=to_contents(messages, model), config=config
+                # wait_for enforces the limit whatever HTTP library the SDK uses underneath.
+                response = await asyncio.wait_for(
+                    self._client.aio.models.generate_content(
+                        model=model, contents=to_contents(messages, model), config=config),
+                    timeout=limit,
                 )
             except errors.APIError as exc:
                 last_error = exc
                 if exc.code in RETRYABLE:
-                    if model == self.primary and self.fallback:
-                        self._fallback_until = time.monotonic() + self._sticky
+                    self._use_fallback_for_a_while(model)
                     continue
                 raise LLMError(f"The language model rejected the request ({exc.code}).") from exc
-            except (httpx.TimeoutException, TimeoutError) as exc:
+            except (TimeoutError, httpx.TimeoutException) as exc:
                 last_error = exc
-                if model == self.primary and self.fallback:
-                    self._fallback_until = time.monotonic() + self._sticky
+                self._use_fallback_for_a_while(model)
                 continue
             self.model = model
             return parse_response(response, model)

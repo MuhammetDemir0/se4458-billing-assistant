@@ -1,0 +1,12 @@
+$ aws rds describe-db-instances --db-instance-identifier billing-assistant-db --region eu-central-1 \
+    --query "DBInstances[0].{PubliclyAccessible:PubliclyAccessible,SubnetGroup:DBSubnetGroup.DBSubnetGroupName,SecurityGroups:VpcSecurityGroups[].VpcSecurityGroupId}"
+{
+    "PubliclyAccessible": false,
+    "SubnetGroup": "billing-assistant-db",
+    "SecurityGroups": [
+        "sg-0162256c5d88330ea"
+    ]
+}
+
+The DB subnet group contains only the private subnets (no route to the internet gateway), and the
+security group accepts PostgreSQL (5432) only from the billing-api task security group.

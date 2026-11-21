@@ -33,7 +33,11 @@
   .step.llm { border-color:#7b61c2; } .step.mcp { border-color:#1b998b; } .step.rest { border-color:#d98c1c; }
   .step.confirmation { border-color:#126b6f; } .step.err { border-color:var(--err); }
   .step b { display:inline-block; min-width:110px; }
-  pre { margin:4px 0 0; white-space:pre-wrap; word-break:break-word; background:#f7f8fa; padding:6px; border-radius:4px; max-height:220px; overflow:auto; }
+  pre { margin:4px 0 0; white-space:pre-wrap; word-break:break-word; background:#f7f8fa; padding:6px; border-radius:4px; max-height:180px; overflow:auto; }
+  pre.http { background:#fff4e5; font-weight:600; }
+  .decision { margin-top:4px; font-family:ui-monospace, monospace; font-size:12.5px; color:#4b3a8f; overflow-wrap:anywhere; }
+  /* Wide screens: chat and trace scroll inside their panels, so question, answer and trace stay visible together. */
+  @media (min-width: 901px) { #trace { max-height: calc(100vh - 150px); overflow:auto; } }
   #login { max-width:380px; margin:60px auto; }
   #login form { flex-direction:column; }
   .hint { color:var(--muted); font-size:13px; }
@@ -91,7 +95,7 @@ function renderMarkdown(text) {
 function setAnswer(node, text) { node.innerHTML = renderMarkdown(text); }
 function addMessage(text, who, markdown = false) {
   const m = el("div", "msg " + who); markdown ? setAnswer(m, text) : (m.textContent = text);
-  $("messages").append(m); m.scrollIntoView(); return m;
+  $("messages").append(m); m.scrollIntoView({block: "nearest"}); return m;
 }
 
 async function call(path, body) {
@@ -99,8 +103,30 @@ async function call(path, body) {
   if (token) headers.Authorization = "Bearer " + token;
   const res = await fetch(API + path, {method: "POST", headers, body: JSON.stringify(body)});
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.detail || data.message || ("HTTP " + res.status));
+  if (!res.ok) {
+    const err = new Error(data.detail || data.message || ("HTTP " + res.status));
+    err.status = res.status;
+    throw err;
+  }
   return data;
+}
+
+function sessionExpired() {
+  // Access tokens live 60 minutes: show the sign-in form again instead of failing on every message.
+  token = null; conversationId = null;
+  $("app").hidden = true; $("login").hidden = false; $("who").textContent = "";
+  $("loginError").textContent = "Your session expired. Please sign in again.";
+}
+
+async function ask(q) {
+  try {
+    return await call("/chat", {message: q, conversationId});
+  } catch (e) {
+    // The conversation lives in the agent's memory; after a restart or 30 minutes idle it is gone.
+    // Start a new one and resend the question once.
+    if (e.status === 404 && conversationId) { conversationId = null; return await call("/chat", {message: q}); }
+    throw e;
+  }
 }
 
 function renderTrace(steps) {
@@ -110,9 +136,18 @@ function renderTrace(steps) {
     const d = el("div", "step " + s.kind + (s.status === "error" ? " err" : ""));
     const label = {llm: "LLM", mcp: "MCP", rest: "REST via Gateway", confirmation: "User action", agent: "Agent"}[s.kind] || s.kind;
     d.append(el("b", null, label), el("span", null, ` ${s.name} · ${s.status} · ${s.latency_ms} ms`));
-    if (s.input && Object.keys(s.input).length) d.append(el("pre", null, "input: " + JSON.stringify(s.input, null, 1)));
-    if (s.http && s.http.length) d.append(el("pre", null, s.http.map(h => `${h.method} ${h.path} -> ${h.status}`).join("\n")));
-    d.append(el("pre", null, "result: " + JSON.stringify(s.output, null, 1)));
+    if (s.kind === "llm") {
+      // The model's decision in one line; the full step is still in the JSON trace and the logs.
+      const calls = (s.output && s.output.toolCalls) || [];
+      const decision = calls.length
+        ? "selected tools: " + calls.map(c => `${c.name}(${JSON.stringify(c.args)})`).join(", ")
+        : (s.status === "error" ? "error: " + JSON.stringify(s.output) : "final answer (no more tool calls)");
+      d.append(el("div", "decision", decision));
+    } else {
+      if (s.input && Object.keys(s.input).length) d.append(el("pre", null, "input: " + JSON.stringify(s.input)));
+      if (s.http && s.http.length) d.append(el("pre", "http", s.http.map(h => `${h.method} ${h.path} -> ${h.status}`).join("\n")));
+      d.append(el("pre", null, "result: " + JSON.stringify(s.output, null, 1)));
+    }
     box.append(d);
   }
 }
@@ -147,7 +182,7 @@ function renderPending(p) {
   };
   ok.onclick = () => act("confirm"); no.onclick = () => act("cancel");
   card.append(t, ok, document.createTextNode(" "), no);
-  $("messages").append(card); card.scrollIntoView();
+  $("messages").append(card); card.scrollIntoView({block: "nearest"});
 }
 
 $("loginForm").onsubmit = async (ev) => {
@@ -166,10 +201,13 @@ $("chatForm").onsubmit = async (ev) => {
   $("question").value = ""; $("send").disabled = true;
   addMessage(q, "user"); const wait = addMessage("Thinking...", "bot");
   try {
-    const r = await call("/chat", {message: q, conversationId});
+    const r = await ask(q);
     conversationId = r.conversationId; setAnswer(wait, r.answer); renderTrace(r.trace);
     if (r.pendingPayment) renderPending(r.pendingPayment);
-  } catch (e) { wait.textContent = e.message; wait.classList.add("error"); }
+  } catch (e) {
+    if (e.status === 401) { sessionExpired(); return; }
+    wait.textContent = e.message; wait.classList.add("error");
+  }
   finally { $("send").disabled = false; $("question").focus(); }
 };
 </script>

@@ -209,3 +209,26 @@ async def test_system_prompt_contains_identity_and_date(make_assistant, conversa
     assert OWNER in system and "2026-11-20" in system and "2026-10" in system
     # payment questions are informational; only explicit instructions may prepare a payment
     assert "Can I pay $40?" in system and "Do not call prepare_bill_payment for such questions" in system
+
+
+async def test_turn_budget_keeps_the_answer_inside_the_gateway_timeout(mcp_provider, gateway, intents,
+                                                                       conversations, ctx):
+    """Each LLM call gets only the time left; when too little is left the turn ends politely (no 503)."""
+    from app.orchestrator import BillingAssistant
+    from app.tools.billing_tools import BillingToolProvider
+
+    now = [0.0]
+
+    def slow_first_call(messages):
+        now[0] += 23  # the first LLM call used most of the budget
+        return tools(call("get_bill", {"month": 10, "year": 2026}))
+
+    llm = ScriptedLLMClient([slow_first_call, answer("never reached")])
+    await mcp_provider.refresh()
+    assistant = BillingAssistant(llm, [mcp_provider, BillingToolProvider(gateway, intents)], gateway, intents,
+                                 turn_budget_seconds=25, clock=lambda: now[0])
+    result = await assistant.chat(ctx, conversations.get_or_create(None, OWNER), "What is my October bill?")
+
+    assert llm.calls[0]["timeout"] == 25          # the LLM is told how much time it has
+    assert len(llm.calls) == 1                     # no second call that would exceed the gateway limit
+    assert "took too long" in result.answer

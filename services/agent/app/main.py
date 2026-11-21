@@ -100,7 +100,8 @@ def create_app(settings: Settings | None = None, *, llm: LLMClient | None = None
             from app.llm.gemini import GeminiLLMClient
             llm = GeminiLLMClient(settings.gemini_api_key, settings.gemini_model, settings.llm_max_output_tokens,
                                   fallback_model=settings.gemini_fallback_model or None,
-                                  timeout_seconds=settings.llm_timeout_seconds)
+                                  timeout_seconds=settings.llm_timeout_seconds,
+                                  thinking_level=settings.gemini_thinking_level or None)
         else:
             logger.error("GEMINI_API_KEY is not set: chat requests will fail until it is configured")
             llm = UnconfiguredLLM(settings.gemini_model)
@@ -110,7 +111,8 @@ def create_app(settings: Settings | None = None, *, llm: LLMClient | None = None
     intents = PaymentIntentStore(settings.payment_intent_ttl_seconds)
     conversations = ConversationStore(settings.conversation_ttl_seconds)
     assistant = BillingAssistant(llm, [mcp_provider, BillingToolProvider(gateway, intents)], gateway, intents,
-                                 max_rounds=settings.max_tool_rounds)
+                                 max_rounds=settings.max_tool_rounds,
+                                 turn_budget_seconds=settings.chat_turn_budget_seconds)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
