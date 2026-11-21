@@ -1,0 +1,105 @@
+{
+  "scenario": "2-rest-only",
+  "question": "What is my October 2026 bill?",
+  "httpStatus": 200,
+  "conversationId": "6c1d3568-60dc-4b46-b4d9-fbe83ef9e152",
+  "answer": "Your October 2026 bill total is $80.00. \n\nHere are the details for your bill:\n- **Total:** $80.00\n- **Paid Amount:** $0.00\n- **Remaining Balance:** $80.00\n- **Status:** Unpaid",
+  "pendingPayment": null,
+  "payment": null,
+  "model": "gemini-3.5-flash-lite",
+  "usage": {
+    "promptTokens": 2720,
+    "outputTokens": 90,
+    "thinkingTokens": 0
+  },
+  "trace": [
+    {
+      "step": 1,
+      "kind": "llm",
+      "name": "gemini-3.5-flash-lite",
+      "input": {
+        "tools": [
+          "search_billing_documentation",
+          "get_bill",
+          "get_bill_details",
+          "prepare_bill_payment"
+        ]
+      },
+      "output": {
+        "toolCalls": [
+          {
+            "name": "get_bill",
+            "args": {
+              "year": 2026,
+              "month": 10
+            }
+          }
+        ],
+        "text": "",
+        "usage": {
+          "promptTokens": 1299,
+          "outputTokens": 22,
+          "thinkingTokens": 0
+        }
+      },
+      "status": "ok",
+      "latency_ms": 417.2,
+      "http": []
+    },
+    {
+      "step": 2,
+      "kind": "rest",
+      "name": "get_bill",
+      "input": {
+        "year": 2026,
+        "month": 10
+      },
+      "output": {
+        "subscriberNo": "5551000001",
+        "year": 2026,
+        "month": 10,
+        "currency": "USD",
+        "billTotal": 80.0,
+        "paidAmount": 0.0,
+        "remainingBalance": 80.0,
+        "status": "UNPAID",
+        "calculatedAt": "2026-11-21T07:43:27.447149Z"
+      },
+      "status": "ok",
+      "latency_ms": 77.1,
+      "http": [
+        {
+          "method": "GET",
+          "path": "/api/v1/subscribers/5551000001/bills/2026/10",
+          "status": 200,
+          "latencyMs": 77.1
+        }
+      ]
+    },
+    {
+      "step": 3,
+      "kind": "llm",
+      "name": "gemini-3.5-flash-lite",
+      "input": {
+        "tools": [
+          "search_billing_documentation",
+          "get_bill",
+          "get_bill_details",
+          "prepare_bill_payment"
+        ]
+      },
+      "output": {
+        "toolCalls": [],
+        "text": "Your October 2026 bill total is $80.00. \n\nHere are the details for your bill:\n- **Total:** $80.00\n- **Paid Amount:** $0.00\n- **Remaining Balance:** $80.00\n- **Status:** Unpaid",
+        "usage": {
+          "promptTokens": 1421,
+          "outputTokens": 68,
+          "thinkingTokens": 0
+        }
+      },
+      "status": "ok",
+      "latency_ms": 652.8,
+      "http": []
+    }
+  ]
+}

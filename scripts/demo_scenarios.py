@@ -2,7 +2,7 @@
 
     python scripts/demo_scenarios.py --gateway http://localhost:8080 --out docs/evidence/local
     python scripts/demo_scenarios.py --gateway https://<api-id>.execute-api.eu-central-1.amazonaws.com \
-        --password '<demo password>' --out docs/evidence/aws --confirm-payment
+        --out docs/evidence/aws --confirm-payment          # the demo password is asked (hidden)
 
 Scenarios: (1) MCP-only, (2) REST-only, (3) combined MCP + REST, (4) payment with explicit confirmation,
 (5) attempt to read another subscriber's data. Standard library only.
@@ -10,6 +10,7 @@ NOTE: --confirm-payment really records a (simulated) payment in the database.
 """
 
 import argparse
+import getpass
 import json
 import sys
 import urllib.error
@@ -55,16 +56,19 @@ def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--gateway", default="http://localhost:8080")
     p.add_argument("--username", default="5551000001")
-    p.add_argument("--password", default="Demo#2026!")
+    p.add_argument("--password", help="omit to be asked (hidden); local stack default: Demo#2026!")
     p.add_argument("--out", type=Path, default=Path("docs/evidence/local"))
     p.add_argument("--confirm-payment", action="store_true", help="confirm the prepared payment (writes data)")
     a = p.parse_args()
+    if not a.password:
+        local = any(host in a.gateway for host in ("localhost", "127.0.0.1"))
+        a.password = "Demo#2026!" if local else getpass.getpass(f"Password for {a.username} (input hidden): ")
     base = a.gateway.rstrip("/") + "/agent/v1"
     a.out.mkdir(parents=True, exist_ok=True)
 
     status, login = post(f"{base}/auth/login", {"username": a.username, "password": a.password})
     if status != 200:
-        print("login failed:", login)
+        print("login failed:", login.get("detail", login), "- check the password chosen in create_demo_users.ps1")
         return 1
     token = login["accessToken"]
 

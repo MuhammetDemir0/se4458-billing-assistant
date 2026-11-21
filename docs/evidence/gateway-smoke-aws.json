@@ -1,0 +1,224 @@
+{
+  "gateway": "https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com",
+  "results": [
+    {
+      "check": "health (public)",
+      "request": "GET https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com/api/v1/health",
+      "expected": 200,
+      "status": 200,
+      "ok": true,
+      "requestId": "a515cab0-c044-4c9c-83c3-ab730b71e4d4",
+      "body": {
+        "status": "ok",
+        "database": "up",
+        "version": "v1"
+      }
+    },
+    {
+      "check": "OpenAPI document (public, versioned)",
+      "request": "GET https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com/api/v1/openapi.json",
+      "expected": 200,
+      "status": 200,
+      "ok": true,
+      "requestId": "02a7decc-0c38-44b1-9e4f-ca1b1c2b9e4e",
+      "body": "{\"openapi\": \"3.1.0\", \"info\": {\"title\": \"Mobile Provider Billing API\", \"description\": \"\\nBilling REST API of the Mobile Provider Billing Assistant (SE 4458 Midterm, Group 2).\\n\\n* All public routes are served through the API Gateway under `/api/v1`.\\n* Protected operations need a bearer **access token** (Amazon Cognito in the cloud,\\n  a development token locally). Use the **Authorize** button to paste one.\\n* Errors use RFC 7807 `application/problem+json` with a machine-readable `code`.\\n\", \"version\": \"1.0.0\"}, \"paths\": {\"/api/v1/subscribers/{subscriber_no}/usage\": {\"post\": {\"tags\": [\"Usage\"], \"summary\": \"Add Usage\", \"description\": \"Records one usage event: PHONE adds 10 minutes, INTERNET adds 1 MB. Requires billing-admin.\", \"operationId\": \"add_usage_api_v1_subscribers__subscriber_no__usage_post\", \"security\": [{\"HTTPBearer\": []}], \"parameters\": [{\"name\": \"subscriber_no\", \"in\": \"path\", \"required\": true, \"schema\": {\"type\": \"string\", \"pattern\": \"^\\\\d{10}$\", \"description\": \"10-digit subscriber number\", \"examples\": [\"5551000001\"], \"title\": \"Subscriber No\"}, \"description\": \"10-digit subscriber number\"}], \"requestBody\": {\"required\": true, \"content\": {\"application/json\": {\"schema\": {\"$ref\": \"#/components/schemas/AddUsageRequest\"}}}}, \"responses\": {\"201\": {\"description\": \"Successful Response\", \"content\": {\"application/json\": {\"schema\": {\"$ref\": \"#/components/schemas/AddUsageResponse\"}}}}, \"400\": {\"content\": {\"application/json\": {\"schema\": {\"$ref\": \"#/components/schemas/ProblemDetails\"...(truncated)"
+    },
+    {
+      "check": "Query Bill (public route)",
+      "request": "GET https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com/api/v1/subscribers/5551000001/bills/2026/10",
+      "expected": 200,
+      "status": 200,
+      "ok": true,
+      "requestId": "08092434-efc1-4144-b899-25a816253dc3",
+      "body": {
+        "subscriberNo": "5551000001",
+        "year": 2026,
+        "month": 10,
+        "currency": "USD",
+        "billTotal": 80.0,
+        "paidAmount": 0.0,
+        "remainingBalance": 80.0,
+        "status": "UNPAID",
+        "calculatedAt": "2026-11-21T07:43:27.447149Z"
+      }
+    },
+    {
+      "check": "Query Bill Detailed without token (protected route)",
+      "request": "GET https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com/api/v1/subscribers/5551000001/bills/2026/10/details",
+      "expected": 401,
+      "status": 401,
+      "ok": true,
+      "requestId": null,
+      "body": {
+        "message": "Unauthorized"
+      }
+    },
+    {
+      "check": "Pay Bill without token (protected route)",
+      "request": "POST https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com/api/v1/subscribers/5551000001/bills/2026/10/payments",
+      "expected": 401,
+      "status": 401,
+      "ok": true,
+      "requestId": null,
+      "body": {
+        "message": "Unauthorized"
+      }
+    },
+    {
+      "check": "agent sign-in",
+      "request": "POST https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com/agent/v1/auth/login",
+      "expected": 200,
+      "status": 200,
+      "ok": true,
+      "requestId": null,
+      "body": {
+        "accessToken": "<redacted>",
+        "expiresIn": 3600,
+        "username": "5551000001"
+      }
+    },
+    {
+      "check": "Query Bill Detailed with own token",
+      "request": "GET https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com/api/v1/subscribers/5551000001/bills/2026/10/details?page=1&pageSize=3",
+      "expected": 200,
+      "status": 200,
+      "ok": true,
+      "requestId": "9529a5e5-bbee-4b15-90ea-628a6be22d5f",
+      "body": {
+        "subscriberNo": "5551000001",
+        "year": 2026,
+        "month": 10,
+        "currency": "USD",
+        "billTotal": 80.0,
+        "paidAmount": 0.0,
+        "remainingBalance": 80.0,
+        "status": "UNPAID",
+        "calculatedAt": "2026-11-21T07:43:27.447149Z",
+        "charges": {
+          "phone": {
+            "minutesUsed": 1350,
+            "includedMinutes": 1000,
+            "blockSizeMinutes": 1000,
+            "blockPrice": 10.0,
+            "extraBlocks": 1,
+            "amount": 10.0
+          },
+          "internet": {
+            "mbUsed": 35000,
+            "gbUsed": 35.0,
+            "includedMb": 20000,
+            "basePrice": 50.0,
+            "blockSizeMb": 10000,
+            "blockPrice": 10.0,
+            "extraBlocks": 2,
+            "amount": 70.0
+          },
+          "total": 80.0
+        },
+        "usageRecords": {
+          "items": [
+            {
+              "usageId": 18081,
+              "usageType": "PHONE",
+              "quantity": 10,
+              "unit": "MINUTE",
+              "recordedAt": "2026-10-01T00:00:00Z"
+            },
+            {
+              "usageId": 18216,
+              "usageType": "INTERNET",
+              "quantity": 1,
+              "unit": "MB",
+              "recordedAt": "2026-10-01T00:00:00Z"
+            },
+            {
+              "usageId": 18217,
+              "usageType": "INTERNET",
+              "quantity": 1,
+              "unit": "MB",
+              "recordedAt": "2026-10-01T00:01:09Z"
+            }
+          ],
+          "page": 1,
+          "pageSize": 3,
+          "totalItems": 35135,
+          "totalPages": 11712
+        }
+      }
+    },
+    {
+      "check": "another subscriber's details with my token",
+      "request": "GET https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com/api/v1/subscribers/5551000002/bills/2026/10/details",
+      "expected": 403,
+      "status": 403,
+      "ok": true,
+      "requestId": "0942b3bb-e6ee-4855-9cd5-2d1ca04bf4de",
+      "body": {
+        "type": "https://errors.billing.example/subscriber-forbidden",
+        "title": "Access denied",
+        "status": 403,
+        "detail": "You can only access your own subscriber account.",
+        "code": "SUBSCRIBER_FORBIDDEN",
+        "instance": "/api/v1/subscribers/5551000002/bills/2026/10/details",
+        "requestId": "0942b3bb-e6ee-4855-9cd5-2d1ca04bf4de"
+      }
+    },
+    {
+      "check": "Add Usage with a subscriber token (admin only)",
+      "request": "POST https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com/api/v1/subscribers/5551000001/usage",
+      "expected": 403,
+      "status": 403,
+      "ok": true,
+      "requestId": "99e21108-d567-49ed-affb-62bf4f6738a8",
+      "body": {
+        "type": "https://errors.billing.example/admin-required",
+        "title": "Access denied",
+        "status": 403,
+        "detail": "This operation requires the billing-admin role.",
+        "code": "ADMIN_REQUIRED",
+        "instance": "/api/v1/subscribers/5551000001/usage",
+        "requestId": "99e21108-d567-49ed-affb-62bf4f6738a8"
+      }
+    },
+    {
+      "check": "invalid month -> validation error",
+      "request": "GET https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com/api/v1/subscribers/5551000001/bills/2026/13",
+      "expected": 400,
+      "status": 400,
+      "ok": true,
+      "requestId": "eb6e5f0f-d0c1-4aa8-8047-f74380d3447c",
+      "body": {
+        "type": "https://errors.billing.example/validation-error",
+        "title": "Invalid request",
+        "status": 400,
+        "detail": "One or more fields are invalid.",
+        "code": "VALIDATION_ERROR",
+        "instance": "/api/v1/subscribers/5551000001/bills/2026/13",
+        "requestId": "eb6e5f0f-d0c1-4aa8-8047-f74380d3447c",
+        "errors": [
+          {
+            "field": "path.month",
+            "message": "Input should be less than or equal to 12"
+          }
+        ]
+      }
+    },
+    {
+      "check": "agent health (MCP tools discovered)",
+      "request": "GET https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com/agent/v1/health",
+      "expected": 200,
+      "status": 200,
+      "ok": true,
+      "requestId": null,
+      "body": {
+        "status": "ok",
+        "model": "gemini-3.6-flash",
+        "fallbackModel": "gemini-3.5-flash-lite",
+        "mcpToolsLoaded": [
+          "search_billing_documentation"
+        ],
+        "gateway": "https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com"
+      }
+    }
+  ]
+}

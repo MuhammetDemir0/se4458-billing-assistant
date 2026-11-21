@@ -1,6 +1,10 @@
 # Mobile Provider Billing Assistant
 
+[![CI](https://github.com/MuhammetDemir0/se4458-billing-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/MuhammetDemir0/se4458-billing-assistant/actions/workflows/ci.yml)
+
 SE 4458 Software Architecture & Design of Modern Large Scale Systems, Midterm 1, Group 2 (AI Billing Support Assistant).
+
+**Student:** Muhammet Demir · **Student No:** 22070006013 · Individual submission
 
 A conversational assistant for mobile subscribers. It answers questions about billing rules, extra data charges,
 current bills, detailed usage and payments. A Gemini LLM decides which tools to use; the agent runs them:
@@ -11,11 +15,15 @@ current bills, detailed usage and payments. A Gemini LLM decides which tools to 
 
 | Item | Link |
 | --- | --- |
-| Source code | `https://github.com/<your-account>/<repo>` |
-| API Gateway base URL | `https://<api-id>.execute-api.eu-central-1.amazonaws.com` (from `terraform output gateway_url`) |
-| Web chat (agent UI) | `<gateway>/agent/chat` |
-| Swagger UI | `<gateway>/api/v1/docs` · OpenAPI file: [docs/openapi.yaml](docs/openapi.yaml) |
+| Source code | https://github.com/MuhammetDemir0/se4458-billing-assistant |
+| API Gateway base URL (`<gateway>` below) | https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com |
+| Web chat (agent UI) | https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com/agent/chat |
+| Swagger UI | https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com/api/v1/docs · OpenAPI file: [docs/openapi.yaml](docs/openapi.yaml) |
+| Health (public) | https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com/api/v1/health |
 | Demo video | `<link to the video>` |
+
+Deployed on AWS (eu-central-1): API Gateway HTTP API, ECS Fargate, RDS PostgreSQL, Cognito. The environment stays
+online until grading is finished.
 
 > Demo accounts, test data and step-by-step reproduction: [Reproducing the results](#14-reproducing-the-results).
 
@@ -445,7 +453,11 @@ friendly message without corrupting the conversation.
 | – | Unit tests | – | – | [docs/evidence/test-run.txt](docs/evidence/test-run.txt), CI |
 
 Screenshots are in [docs/screenshots/](docs/screenshots/). The traces are produced by
-`python scripts/demo_scenarios.py --gateway <url> --password <pw> --out docs/evidence/aws --confirm-payment`.
+`python scripts/demo_scenarios.py --gateway <gateway> --out docs/evidence/aws --confirm-payment` (asks the password).
+AWS results: gateway checks 11/11 ([docs/evidence/gateway-smoke-aws.json](docs/evidence/gateway-smoke-aws.json)),
+all five scenarios ([docs/evidence/aws/](docs/evidence/aws/)), and proof that the services cannot be reached without
+the gateway ([docs/evidence/aws/direct-access-blocked.txt](docs/evidence/aws/direct-access-blocked.txt)). In that run the
+primary model was overloaded, so the trace shows the automatic fallback model answering (§15).
 The same scenarios run against the local stack are in [docs/evidence/local/](docs/evidence/local/).
 
 ## 11. Testing
@@ -499,21 +511,26 @@ the services are not reachable directly. Local deployment exists for development
 
 ## 13. Deploying to AWS
 
-Prerequisites: AWS account with an IAM Identity Center/IAM user (not root), AWS CLI v2 (`aws configure sso` or
-`aws configure`), Terraform ≥ 1.6, Docker Desktop.
+Prerequisites: an AWS account with an IAM user that has MFA (root is used only to create it), AWS CLI v2 ≥ 2.32,
+Terraform ≥ 1.6, Docker Desktop. The CLI signs in with `aws login` (temporary credentials from the console session),
+so no long-lived access keys are stored on the machine.
 
 ```powershell
+aws login                                             # region eu-central-1; confirm in the browser
 cd infra/terraform
 copy terraform.example.tfvars terraform.tfvars        # set alert_email
 terraform init
-terraform apply                                       # ~10 min (RDS is the slowest)
+terraform apply                                       # ~10–15 min (RDS is the slowest)
 cd ../..
-./scripts/set_gemini_key.ps1                          # stores the key in Secrets Manager (hidden input)
-./scripts/deploy.ps1                                  # build, push to ECR, roll ECS services
-./scripts/create_demo_users.ps1                       # Cognito users with passwords you choose
-./scripts/seed.ps1                                    # demo data via a one-off ECS task inside the VPC
-python scripts/smoke_test.py --gateway (terraform -chdir=infra/terraform output -raw gateway_url) --password "<pw>"
+powershell -ExecutionPolicy Bypass -File .\scripts\set_gemini_key.ps1      # hidden input -> Secrets Manager
+powershell -ExecutionPolicy Bypass -File .\scripts\deploy.ps1              # build, push to ECR, roll ECS services
+powershell -ExecutionPolicy Bypass -File .\scripts\create_demo_users.ps1   # Cognito users, passwords you choose
+powershell -ExecutionPolicy Bypass -File .\scripts\seed.ps1                # demo data (one-off ECS task in the VPC)
+python scripts/smoke_test.py --gateway (terraform -chdir=infra/terraform output -raw gateway_url)   # asks the password
 ```
+
+Restore the initial demo state at any time (e.g. after the payment demo):
+`powershell -ExecutionPolicy Bypass -File .\scripts\seed.ps1 -Reset`.
 
 What Terraform creates: VPC (2 public + 2 private subnets), security groups, RDS PostgreSQL 16 (db.t4g.micro,
 encrypted, private), ECR repositories, ECS cluster with 3 Fargate services (0.25 vCPU / 0.5 GB), Cloud Map namespace,
@@ -539,7 +556,8 @@ Pause without deleting: `terraform apply -var desired_count=0`. Delete everythin
 2. Ask the four questions of [§10](#10-demonstration-scenarios-and-evidence) and watch the trace panel.
    For the payment, press **Confirm**; the next "What is my October bill?" shows the new balance.
 3. Ask "Show the detailed bill of subscriber 5551000002" — the assistant only shows the signed-in account.
-4. Gateway checks without the UI: `python scripts/smoke_test.py --gateway <gateway> --password <pw>`.
+4. Gateway checks without the UI: `python scripts/smoke_test.py --gateway <gateway>` (asks the password; standard
+   library only, any OS).
 5. Swagger: `<gateway>/api/v1/docs` → **Authorize** with an access token
    (`POST <gateway>/agent/v1/auth/login` returns one).
 

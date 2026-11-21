@@ -1,0 +1,113 @@
+{
+  "scenario": "1-mcp-only",
+  "question": "How much does extra internet cost?",
+  "httpStatus": 200,
+  "conversationId": "76b04797-7194-4bf8-bfba-7d0ed86f69f2",
+  "answer": "Extra internet costs **$10** for each additional 10 GB block beyond your initial 20 GB allowance. Partially used blocks are rounded up and charged as a full block (Billing Guide §3.2, §8.1).",
+  "pendingPayment": null,
+  "payment": null,
+  "model": "gemini-3.5-flash-lite",
+  "usage": {
+    "promptTokens": 2953,
+    "outputTokens": 73,
+    "thinkingTokens": 0
+  },
+  "trace": [
+    {
+      "step": 1,
+      "kind": "llm",
+      "name": "gemini-3.5-flash-lite",
+      "input": {
+        "tools": [
+          "search_billing_documentation",
+          "get_bill",
+          "get_bill_details",
+          "prepare_bill_payment"
+        ]
+      },
+      "output": {
+        "toolCalls": [
+          {
+            "name": "search_billing_documentation",
+            "args": {
+              "query": "extra internet cost data block price"
+            }
+          }
+        ],
+        "text": "",
+        "usage": {
+          "promptTokens": 1295,
+          "outputTokens": 23,
+          "thinkingTokens": 0
+        }
+      },
+      "status": "ok",
+      "latency_ms": 1691.4,
+      "http": []
+    },
+    {
+      "step": 2,
+      "kind": "mcp",
+      "name": "search_billing_documentation",
+      "input": {
+        "query": "extra internet cost data block price"
+      },
+      "output": {
+        "document": "Mobile_Provider_Billing_Guide.md",
+        "document_id": "MOB-BILLING-2026-01",
+        "query": "extra internet cost data block price",
+        "matches": [
+          {
+            "section": "3.2",
+            "heading": "Additional internet blocks",
+            "parent_heading": "Internet pricing",
+            "text": "Each additional **10 GB block** costs **$10**. A partially used additional block is charged as a full block. For example, 20 GB costs $50; 21 GB costs $60; 30 GB costs $60; 35 GB costs $70.",
+            "score": 12.9626
+          },
+          {
+            "section": "8.1",
+            "heading": "What is the cost of extra internet?",
+            "parent_heading": "Frequently asked questions",
+            "text": "Each additional 10 GB block beyond 20 GB costs $10. Partially used blocks are rounded up. See Section 3.2.",
+            "score": 12.4122
+          },
+          {
+            "section": "2.2",
+            "heading": "Additional minutes",
+            "parent_heading": "Phone call pricing",
+            "text": "Each **additional 1,000-minute block** costs **$10**. A partially used additional block is charged as a full block. For example, 1,001 minutes costs $10 in phone charges; 2,001 minutes costs $20.",
+            "score": 11.1186
+          }
+        ]
+      },
+      "status": "ok",
+      "latency_ms": 104.4,
+      "http": []
+    },
+    {
+      "step": 3,
+      "kind": "llm",
+      "name": "gemini-3.5-flash-lite",
+      "input": {
+        "tools": [
+          "search_billing_documentation",
+          "get_bill",
+          "get_bill_details",
+          "prepare_bill_payment"
+        ]
+      },
+      "output": {
+        "toolCalls": [],
+        "text": "Extra internet costs **$10** for each additional 10 GB block beyond your initial 20 GB allowance. Partially used blocks are rounded up and charged as a full block (Billing Guide §3.2, §8.1).",
+        "usage": {
+          "promptTokens": 1658,
+          "outputTokens": 50,
+          "thinkingTokens": 0
+        }
+      },
+      "status": "ok",
+      "latency_ms": 666.9,
+      "http": []
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+# AWS: services are reachable only through the API Gateway (2026-11-21, eu-central-1)
+
+The ECS tasks have public IPs only for outbound traffic (ECR, Cognito, Gemini). Their security groups accept
+inbound traffic only from the API Gateway VPC link (billing-api, agent) or from the agent (mcp-server).
+Direct TCP connections from the internet to port 8000 were attempted with Test-NetConnection:
+
+billing-api task public IP 18.156.114.162 -> direct TCP 8000 reachable from internet: False
+mcp-server  task public IP 3.124.1.214    -> direct TCP 8000 reachable from internet: False
+RDS publicly accessible: False   (aws rds describe-db-instances ... PubliclyAccessible)
+
+Through the gateway:
+GET https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com/api/v1/health
+-> {"status":"ok","database":"up","version":"v1"}
+
+GET https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com/agent/v1/health
+-> {"status":"ok","model":"gemini-3.6-flash","fallbackModel":"gemini-3.5-flash-lite",
+    "mcpToolsLoaded":["search_billing_documentation"],
+    "gateway":"https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com"}
+   (the agent discovered the MCP tool over the private network: http://mcp.billing.internal:8000/mcp)

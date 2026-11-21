@@ -2,7 +2,11 @@
 .SYNOPSIS
   Load the demo data into RDS by running the billing-api image once as an ECS task ("seed" command).
   The database is private, so the seed has to run inside the VPC.
+.EXAMPLE
+  ./scripts/seed.ps1           # add missing demo data (idempotent)
+  ./scripts/seed.ps1 -Reset    # wipe all billing data and restore the initial demo state (e.g. before a demo)
 #>
+param([switch]$Reset)
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $out = terraform "-chdir=$(Join-Path $root 'infra/terraform')" output -json | ConvertFrom-Json
@@ -12,9 +16,10 @@ $subnets = ($out.task_subnets.value -join ",")
 $sg = $out.billing_security_group.value
 
 $network = "awsvpcConfiguration={subnets=[$subnets],securityGroups=[$sg],assignPublicIp=ENABLED}"
+$command = if ($Reset) { '["seed","--reset"]' } else { '["seed"]' }
 # Passed through a file: Windows PowerShell 5.1 mangles double quotes in native command arguments.
 $overridesFile = Join-Path ([IO.Path]::GetTempPath()) "seed-overrides.json"
-Set-Content -Path $overridesFile -Encoding ascii -Value '{"containerOverrides":[{"name":"billing-api","command":["seed"]}]}'
+Set-Content -Path $overridesFile -Encoding ascii -Value "{`"containerOverrides`":[{`"name`":`"billing-api`",`"command`":$command}]}"
 
 $taskArn = aws ecs run-task --cluster $cluster --launch-type FARGATE `
     --task-definition $out.billing_task_definition.value `
@@ -22,7 +27,7 @@ $taskArn = aws ecs run-task --cluster $cluster --launch-type FARGATE `
     --region $region --query "tasks[0].taskArn" --output text
 if ($LASTEXITCODE -ne 0 -or -not $taskArn -or $taskArn -eq "None") { throw "run-task failed" }
 
-Write-Host "Seed task started: $taskArn" -ForegroundColor Cyan
+Write-Host "Seed task started$(if ($Reset) { ' (reset)' }): $taskArn" -ForegroundColor Cyan
 aws ecs wait tasks-stopped --cluster $cluster --tasks $taskArn --region $region
 $exit = aws ecs describe-tasks --cluster $cluster --tasks $taskArn --region $region `
     --query "tasks[0].containers[0].exitCode" --output text

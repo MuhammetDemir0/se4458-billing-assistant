@@ -12,6 +12,7 @@ from the user's prompt or from LLM tool arguments.
 """
 
 import hmac
+import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Protocol
@@ -20,6 +21,8 @@ import httpx
 import jwt
 
 from app.config import Settings
+
+logger = logging.getLogger("agent.identity")
 
 
 class AuthError(Exception):
@@ -138,6 +141,10 @@ class CognitoIdentityProvider:
             )
         body = response.json() if response.content else {}
         if response.status_code != 200:
+            # The client only learns "incorrect username or password"; the log keeps the real reason
+            # (e.g. NotAuthorizedException vs. a misconfigured app client). The password is never logged.
+            logger.warning("Cognito sign-in failed for %s: %s %s", username, response.status_code,
+                           body.get("__type", "unknown"))
             raise AuthError("Incorrect username or password.")
         if "AuthenticationResult" not in body:
             # e.g. NEW_PASSWORD_REQUIRED: demo users are created with permanent passwords.

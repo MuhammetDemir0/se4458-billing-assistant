@@ -1,10 +1,11 @@
 #!/bin/sh
 set -e
 
-# "seed" runs the one-off demo data loader (used by an ECS run-task); anything else starts the API.
+# "seed [--reset]" runs the one-off demo data loader (used by an ECS run-task); anything else starts the API.
 if [ "$1" = "seed" ]; then
+  shift
   alembic upgrade head
-  exec python -m app.seed
+  exec python -m app.seed "$@"
 fi
 
 alembic upgrade head

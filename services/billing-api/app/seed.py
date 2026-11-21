@@ -1,4 +1,7 @@
-"""Load demo data for the instructor and the demo video.  Run: python -m app.seed
+"""Load demo data for the instructor and the demo video.
+
+    python -m app.seed            # idempotent: adds what is missing
+    python -m app.seed --reset    # wipe all billing data first (restores the initial demo state)
 
 Idempotent: subscribers are upserted, usage is only inserted for periods that
 have none, and bills are (re)calculated through BillingService, i.e. the same
@@ -45,10 +48,17 @@ INSERT_EVENTS = text(
 )
 
 
-def seed() -> None:
+def seed(reset: bool = False) -> None:
     settings = get_settings()
     engine = build_engine(settings)
     session_factory = build_session_factory(engine)
+
+    if reset:
+        # Demo reset (e.g. before a demo video): removes ALL billing data, then reloads the scenario data.
+        with session_factory() as session:
+            session.execute(text("TRUNCATE payments, bills, usage_records, subscribers RESTART IDENTITY CASCADE"))
+            session.commit()
+        print("demo data reset: all subscribers, usage, bills and payments removed")
 
     with session_factory() as session:
         for no, name in SUBSCRIBERS.items():
@@ -91,4 +101,6 @@ def seed() -> None:
 
 
 if __name__ == "__main__":
-    seed()
+    import sys
+
+    seed(reset="--reset" in sys.argv[1:])

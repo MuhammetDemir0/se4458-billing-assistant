@@ -2,19 +2,31 @@
 
     python scripts/smoke_test.py --gateway http://localhost:8080
     python scripts/smoke_test.py --gateway https://<api-id>.execute-api.eu-central-1.amazonaws.com \
-        --password '<demo password>' --save docs/evidence/gateway-smoke.json
+        --save docs/evidence/gateway-smoke-aws.json      # the demo password is asked (hidden)
 
 Checks: public route, protected route without token (401), sign-in, own data (200), another subscriber's data
 (403), versioned docs, agent health (MCP tools discovered) and the throttling configuration.
 """
 
 import argparse
+import getpass
 import json
 import sys
 import urllib.error
 import urllib.request
 
 results: list[dict] = []
+LOCAL_HOSTS = ("localhost", "127.0.0.1")
+LOCAL_DEMO_PASSWORD = "Demo#2026!"  # exists only in the local stack (AUTH_MODE=local)
+
+
+def resolve_password(gateway: str, password: str | None, username: str) -> str:
+    """Use --password if given; locally fall back to the local demo password; otherwise ask (hidden)."""
+    if password:
+        return password
+    if any(host in gateway for host in LOCAL_HOSTS):
+        return LOCAL_DEMO_PASSWORD
+    return getpass.getpass(f"Password for {username} (input hidden): ")
 
 
 def http(method: str, url: str, body: dict | None = None, token: str | None = None) -> tuple[int, dict | str, dict]:
@@ -38,10 +50,13 @@ def http(method: str, url: str, body: dict | None = None, token: str | None = No
 def check(name: str, method: str, url: str, expected: int, **kwargs) -> dict | str:
     status, body, headers = http(method, url, **kwargs)
     ok = status == expected
-    text = json.dumps(body, ensure_ascii=False)
+    recorded = body
+    if isinstance(body, dict) and "accessToken" in body:
+        recorded = {**body, "accessToken": "<redacted>"}  # never store a usable token in evidence files
+    text = json.dumps(recorded, ensure_ascii=False)
     results.append({"check": name, "request": f"{method} {url}", "expected": expected, "status": status,
                     "ok": ok, "requestId": headers.get("X-Request-ID") or headers.get("x-request-id"),
-                    "body": body if len(text) <= 1500 else text[:1500] + "...(truncated)"})
+                    "body": recorded if len(text) <= 1500 else text[:1500] + "...(truncated)"})
     print(f"[{'PASS' if ok else 'FAIL'}] {name}: {method} {url} -> {status} (expected {expected})")
     return body
 
@@ -51,9 +66,10 @@ def main() -> int:
     parser.add_argument("--gateway", default="http://localhost:8080")
     parser.add_argument("--subscriber", default="5551000001")
     parser.add_argument("--other", default="5551000002")
-    parser.add_argument("--password", default="Demo#2026!")
+    parser.add_argument("--password", help="omit to be asked (hidden); local stack default: Demo#2026!")
     parser.add_argument("--save", help="write results as JSON evidence")
     args = parser.parse_args()
+    args.password = resolve_password(args.gateway, args.password, args.subscriber)
     gw = args.gateway.rstrip("/")
     bills = f"{gw}/api/v1/subscribers/{args.subscriber}/bills/2026/10"
 

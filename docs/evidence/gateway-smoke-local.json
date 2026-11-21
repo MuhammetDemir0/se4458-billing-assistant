@@ -72,7 +72,7 @@
       "ok": true,
       "requestId": "d34071a1-b7da-4546-89cc-fd4338821b53",
       "body": {
-        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb2NhbC01NTUxMDAwMDAxIiwidXNlcm5hbWUiOiI1NTUxMDAwMDAxIiwiY29nbml0bzpncm91cHMiOlsic3Vic2NyaWJlciJdLCJ0b2tlbl91c2UiOiJhY2Nlc3MiLCJjbGllbnRfaWQiOiJsb2NhbC1hZ2VudCIsImlzcyI6ImxvY2FsLWRldi1pc3N1ZXIiLCJpYXQiOjE3OTUyMDg4NDAsImV4cCI6MTc5NTIxMjQ0MH0.3o7bHFhX5qSt0RwauwWhRvaZpVbijIDrGGjNyCKPK8k",
+        "accessToken": "<redacted>",
         "expiresIn": 3600,
         "username": "5551000001"
       }

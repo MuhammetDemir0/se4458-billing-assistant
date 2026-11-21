@@ -9,6 +9,11 @@ param(
     [string[]]$Services = @("billing-api", "mcp-server", "agent")
 )
 $ErrorActionPreference = "Stop"
+# "powershell -File deploy.ps1 -Services a,b" passes one string "a,b"; accept both forms.
+$Services = @($Services | ForEach-Object { $_ -split "," } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+$known = @("billing-api", "mcp-server", "agent")
+$unknown = $Services | Where-Object { $known -notcontains $_ }
+if ($unknown) { throw "Unknown service(s): $($unknown -join ', '). Use: $($known -join ', ')" }
 $root = Split-Path -Parent $PSScriptRoot
 $tf = Join-Path $root "infra/terraform"
 
@@ -20,7 +25,9 @@ $tag = (git -C $root rev-parse --short HEAD 2>$null)
 if (-not $tag) { $tag = Get-Date -Format "yyyyMMddHHmmss" }
 
 Write-Host "Logging in to $registry" -ForegroundColor Cyan
-aws ecr get-login-password --region $region | docker login --username AWS --password-stdin $registry
+# Piped through cmd: Windows PowerShell 5.1 re-encodes text piped between native commands,
+# which corrupts the long ECR token (docker answers "400 Bad Request").
+cmd /c "aws ecr get-login-password --region $region | docker login --username AWS --password-stdin $registry"
 if ($LASTEXITCODE -ne 0) { throw "ECR login failed" }
 
 foreach ($svc in $Services) {
