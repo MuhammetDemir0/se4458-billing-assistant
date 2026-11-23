@@ -20,7 +20,7 @@ current bills, detailed usage and payments. A Gemini LLM decides which tools to 
 | Web chat (agent UI) | https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com/agent/chat |
 | Swagger UI | https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com/api/v1/docs · OpenAPI file: [docs/openapi.yaml](docs/openapi.yaml) |
 | Health (public) | https://zis2kljqp8.execute-api.eu-central-1.amazonaws.com/api/v1/health |
-| Demo video | `<link to the video>` |
+| Demo video (16 min) | https://youtu.be/-zfXYSXHtz4 |
 
 Deployed on AWS (eu-central-1): API Gateway HTTP API, ECS Fargate, RDS PostgreSQL, Cognito. The environment stays
 online until grading is finished.
